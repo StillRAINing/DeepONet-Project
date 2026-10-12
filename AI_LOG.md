@@ -35,6 +35,7 @@ Disclosure doesn't replace verification. You are responsible for all code, resul
 | 4 | Draft the 14-day project plan (`MMA3001_project_plan.md`) | **High** for structure and wording. Dates and parameter ranges are placeholders. | Plan structure and rubric mapping | [ ] Check dates against the Unit Overview Spreadsheet. Adjust timeline to my own schedule. | Dates are assumed, not from the brief. | [fill in] |
 | 5 | Summarise the brief's AI-use policy and start this log | **Medium.** Policy is from the brief (section 7). Log format is AI-suggested. | Clarify what disclosure requires | [ ] Compare with brief section 7 | [fill in] | [fill in] |
 | 6 | Scaffold the GitHub repo (README, LICENSE, .gitignore, requirements, pytest config, empty `src/` modules, smoke test) | **High.** Boilerplate only, no project logic. | Save time on setup | [ ] Check README layout matches the brief's repo requirements; fill in LICENSE name | [fill in] | [fill in] |
+| 7 | Interactive pygame visualiser (`src/viz.py`): arm animation, parameter sliders, RK4/RK45 overlay, surrogate hook | **High.** UI code only; physics is imported from `dynamics.py`, `solvers.py`, `data.py`. | Explore the model interactively and make report figures | [ ] Run it; compare RK4 vs RK45 overlay; check energy plot against `energy()` | [fill in] | [fill in] |
 
 ---
 
