@@ -89,6 +89,7 @@ NaN, negative mass and wrong array shapes are rejected. (To be implemented and d
 ```
 src/         source code (see Method)
 tests/       pytest unit tests
+scripts/     data diagnostics and figure scripts (run with python -m scripts.<name>)
 notebooks/   exploration and plots
 docs/        generated HTML docs (pdoc)
 results/     figures, tables, test report
@@ -127,10 +128,14 @@ python -m src.data                          # generate the seeded dataset into d
 python -m src.train                         # train DeepONet and MLP
 python -m src.evaluate                      # metrics and figures into results/
 python -m src.benchmark                     # timing, memory, FLOPs
+python -m scripts.data_stats                # dataset statistics (per-channel scales, wrapping)
+python -m scripts.data_figures              # dataset figures into results/
+python -m scripts.torque_range_sweep        # compare torque-amplitude caps before fixing ranges
+python -m scripts.input_sensitivity         # how sensitive trajectories are to tiny input changes
 pdoc src -o docs                            # build HTML docs
 ```
 
-Random seed: TBD (will be recorded here and in `src/data.py`).
+Random seed: 3001 (`SEED` in `src/data.py`).
 
 ## Results
 

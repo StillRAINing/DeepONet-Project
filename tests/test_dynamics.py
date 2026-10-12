@@ -55,3 +55,24 @@ def test_energy_conserved_without_friction_or_torque():
     X = rk4_integrate(f, x0, t)
     E = np.array([energy(x, p) for x in X])
     assert np.max(np.abs(E - E[0])) / abs(E[0] - energy(np.array([-np.pi/2, 0, 0, 0]), p)) < 1e-6
+
+
+# --- TODO (student): tests the mutation audit showed are missing (docs/REVIEW_NOTES.md section 1) ---
+todo = pytest.mark.skip(reason="TODO (student): write this test")
+
+
+@todo
+def test_payload_inertia_matches_brute_force_at_mid_range_payload():
+    """Build link 2 + point mass as separate bodies, sum their kinetic energies from geometry, and compare with
+    0.5 * qdot^T M qdot for m_p in (0.3, 0.7). Kills the 'drop a parallel-axis term' mutations."""
+
+
+@todo
+def test_coriolis_skew_symmetry_identity():
+    """qdot^T (Mdot - 2 C) qdot = 0 with a finite-difference Mdot. Needs C as a matrix or the power form
+    qdot . (C qdot) = 0.5 qdot^T Mdot qdot."""
+
+
+@todo
+def test_energy_balance_with_torque_and_friction():
+    """dE/dt = tau . qdot - b |qdot|^2 along an RK4 trajectory (finite-difference dE/dt)."""
