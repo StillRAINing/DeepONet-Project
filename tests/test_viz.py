@@ -20,3 +20,29 @@ def test_app_runs_a_few_frames_and_rk45_matches_rk4():
     # RK45 overlay should sit on the RK4 curve for the default (moderate) settings
     assert np.max(np.abs(app.rk45 - app.traj)) < 1e-2 * max(1.0, np.max(np.abs(app.traj)))
     app.run(max_frames=3)
+
+
+def test_smooth_family_app_scales_the_stored_torque_shape_and_overlays_surrogates():
+    import numpy as np
+
+    from src import viz
+    from src.data import PEAK_GRID, smooth_torque_samples
+
+    viz.SURROGATES["perfect"] = lambda params, coef: viz.simulate_smooth(params, coef)
+    try:
+        app = viz.App(family="smooth")
+        assert len(app.sliders) == 4  # m_p, b and one peak slider per joint
+        params, coef = app.inputs()
+        peak = np.abs(smooth_torque_samples(coef, PEAK_GRID)).max(axis=1)
+        assert coef.shape[:2] == (2, 2) and np.allclose(peak, [app.sliders[2].val, app.sliders[3].val])
+        assert np.allclose(app.surr["perfect"], app.traj) and app.rel_l2(app.surr["perfect"]) == 0.0
+        app.run(max_frames=3)
+    finally:
+        viz.SURROGATES.clear()
+
+
+def test_unknown_family_is_rejected():
+    from src.viz import App
+
+    with pytest.raises(ValueError, match="family"):
+        App(family="bogus")

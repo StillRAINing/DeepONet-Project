@@ -24,7 +24,10 @@ from pathlib import Path
 import numpy as np
 import pygame
 
-from .data import RANGES, OOD_RANGES, T_FINAL, T_GRID, X0, load, simulate, torque_fn
+from .data import (
+    DATA_PATH_SMOOTH, OOD_RANGES, PEAK_GRID, RANGES, SMOOTH_RANGES, T_FINAL, T_GRID, X0,
+    load, sample_smooth_inputs, simulate, simulate_smooth, smooth_torque_fn, smooth_torque_samples, torque_fn,
+)
 from .dynamics import ArmParams, energy, state_derivative
 from .solvers import rk45_integrate
 
@@ -162,9 +165,17 @@ class App:
     The RK4 ground truth is always shown; RK45 and any registered surrogates are overlaid.
     Keys: space pause, [ ] speed, R restart, G passive ghost, K RK45 overlay, N / O random test /
     out-of-range sample, D defaults, P screenshot.
+
+    ``family="sinusoid"`` (default) has the sliders ``A, f, phi`` per joint (the original torque
+    family). ``family="smooth"`` is the family the surrogates were trained on: a random smooth
+    torque (2 x 2 x K Fourier coefficients, loaded with N / O), where the A sliders set the peak
+    torque of each joint and the shape is kept fixed.
     """
 
-    def __init__(self):
+    def __init__(self, family: str = "sinusoid"):
+        if family not in ("sinusoid", "smooth"):
+            raise ValueError(f"family must be 'sinusoid' or 'smooth'; got {family!r}")
+        self.family = family
         pygame.init()
         self.screen = pygame.display.set_mode((W, H))
         pygame.display.set_caption("2-link arm: DeepONet project visualiser")
@@ -174,22 +185,28 @@ class App:
         self.data = None  # lazily loaded dataset
 
         sx, sw = ARM_W + 30, 250
+        a_hi = RANGES["A"][1] if family == "sinusoid" else 12.0  # 12 N m: top of the OOD amplitude shells
+        a_safe = RANGES["A"] if family == "sinusoid" else SMOOTH_RANGES["A"]
         specs = [
             ("m_p (kg)", 0.0, OOD_RANGES["m_p"][1], 0.5, RANGES["m_p"], "{:.2f}"),
             ("b (N m s/rad)", RANGES["b"][0], OOD_RANGES["b"][1], 0.2, RANGES["b"], "{:.2f}"),
         ]
         for j in (1, 2):
+            if family == "smooth":
+                specs.append((f"peak |tau{j}| (N m)", 0.0, a_hi, 3.0, a_safe, "{:.2f}"))
+                continue
             specs += [
-                (f"A{j} (N m)", 0.0, RANGES["A"][1], 8.0, RANGES["A"], "{:.2f}"),
+                (f"A{j} (N m)", 0.0, a_hi, 8.0, a_safe, "{:.2f}"),
                 (f"f{j} (Hz)", RANGES["f"][0], RANGES["f"][1], 0.5 + 0.2 * j, RANGES["f"], "{:.2f}"),
                 (f"phi{j} (rad)", 0.0, 2 * np.pi, 0.0 if j == 1 else 1.0, None, "{:.2f}"),
             ]
         self.sliders = []
+        per_joint = 1 if family == "smooth" else 3
         for i, (lab, lo, hi, v, safe, fmt) in enumerate(specs):
             if i < 2:  # m_p and b share the top row
                 col, row = i, 0
             else:  # torque sliders: joint 1 left, joint 2 right
-                col, row = divmod(i - 2, 3)[0], divmod(i - 2, 3)[1] + 1
+                col, row = divmod(i - 2, per_joint)[0], divmod(i - 2, per_joint)[1] + 1
             rect = (sx + col * (sw + 30), 50 + row * 42, sw, 14)
             self.sliders.append(Slider(rect, lab, lo, hi, v, safe, fmt))
 
@@ -199,19 +216,37 @@ class App:
         self.show_rk45 = False
         self.show_ghost = True
         self.trail_len = 80
+        if family == "smooth":  # unit-peak torque shape (2, 2, K); the A sliders scale it
+            _, c = sample_smooth_inputs(1, np.random.default_rng(3001))
+            self._set_smooth_shape(c[0])
         self.solve()
 
     # ---- model ----------------------------------------------------------
+    def _set_smooth_shape(self, coef):
+        """Store ``coef`` (2, 2, K) divided by each joint's peak |tau|, and return those peaks (2,)."""
+        peak = np.abs(smooth_torque_samples(coef, PEAK_GRID)).max(axis=1)
+        self.unit_shape = coef / np.maximum(peak, 1e-12)[:, None, None]
+        return peak
+
     def inputs(self):
-        """Current slider values as ``(params (2,), coef (2, 3))`` = ``[m_p, b]`` and ``[A, f, phi]`` per joint."""
+        """Current slider values as ``(params (2,), coef)``.
+
+        ``coef`` is (2, 3) = ``[A, f, phi]`` per joint (sinusoid family) or (2, 2, K) Fourier
+        coefficients (smooth family: the stored unit-peak shape times the A sliders).
+        """
         v = [s.val for s in self.sliders]
         params = np.array([v[0], v[1]])
+        if self.family == "smooth":
+            return params, self.unit_shape * np.array([v[2], v[3]])[:, None, None]
         coef = np.array([[v[2], v[3], v[4]], [v[5], v[6], v[7]]])
         return params, coef
 
     def set_inputs(self, params, coef):
         """Move the sliders to ``params`` and ``coef`` (clipped to each slider's range)."""
-        vals = [params[0], params[1], *coef[0], *coef[1]]
+        if self.family == "smooth":
+            vals = [params[0], params[1], *self._set_smooth_shape(coef)]
+        else:
+            vals = [params[0], params[1], *coef[0], *coef[1]]
         for s, v in zip(self.sliders, vals):
             s.val = float(np.clip(v, s.lo, s.hi))
 
@@ -219,9 +254,10 @@ class App:
         """Re-run RK4 (and the passive and surrogate overlays) for the current slider values."""
         params, coef = self.inputs()
         self.p = replace(BASE_ARM, m_p=float(params[0]), b=float(params[1]))
-        self.traj = simulate(params, coef)
-        self.tau = torque_fn(coef)
-        self.passive = simulate(params, np.zeros_like(coef))
+        sim, tau_fn = (simulate_smooth, smooth_torque_fn) if self.family == "smooth" else (simulate, torque_fn)
+        self.traj = sim(params, coef)
+        self.tau = tau_fn(coef)
+        self.passive = sim(params, np.zeros_like(coef))
         self.tau_grid = np.array([self.tau(t) for t in T_GRID])
         self.energy = np.array([energy(x, self.p) for x in self.traj])
         self.rk45 = None
@@ -242,7 +278,7 @@ class App:
         """Set the sliders to a random sample of ``split`` from the dataset (no-op if no dataset file)."""
         if self.data is None:
             try:
-                self.data = load()
+                self.data = load(DATA_PATH_SMOOTH) if self.family == "smooth" else load()
             except OSError:
                 return
         i = np.random.randint(len(self.data[f"{split}_params"]))
@@ -333,9 +369,20 @@ class App:
         ]
         in_range = self.in_range()
         info.append("in-range" if in_range else "OUT-OF-RANGE (surrogate untrained here)")
+        tip = fk(x[:2], self.p)[1]
+        y0 = H - 100 - 18 * len(self.surr)
+        pygame.draw.rect(s, PANEL, (14, y0 - 4, ARM_W - 18, H - 14 - y0 + 4))  # keep the text legible over the arm
+        for i, (n, tr) in enumerate(self.surr.items()):
+            err_cm = 100 * np.linalg.norm(fk(self.state_at(tr)[:2], self.p)[1] - tip)
+            line = f"{n}: tip error {err_cm:5.1f} cm   whole-run rel L2 {self.rel_l2(tr):.3f}"
+            s.blit(self.font.render(line, True, SUR_COLORS[i % len(SUR_COLORS)]), (24, y0 + i * 18))
         for i, line in enumerate(info):
             col = (255, 120, 120) if i == 3 and not in_range else DIM
             s.blit(self.font.render(line, True, col), (24, H - 100 + i * 18))
+
+    def rel_l2(self, traj):
+        """Relative L2 error of ``traj`` against RK4 over the whole trajectory, all four channels together."""
+        return float(np.linalg.norm(traj - self.traj) / np.linalg.norm(self.traj))
 
     def in_range(self):
         """True if every slider is inside its training range (bright part of the track)."""
