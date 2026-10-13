@@ -3,7 +3,7 @@ import importlib
 
 import pytest
 
-MODULES = ["dynamics", "solvers", "data", "model", "train", "evaluate", "benchmark"]
+MODULES = ["dynamics", "solvers", "data", "model", "train", "evaluate", "benchmark", "validate", "surrogate"]
 
 
 @pytest.mark.parametrize("name", MODULES)

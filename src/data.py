@@ -81,7 +81,16 @@ def simulate(
     base: ArmParams = ArmParams(),
     substeps: int = 8,
 ) -> np.ndarray:
-    """Simulate one trajectory with RK4. Returns shape (N_T, 4) on T_GRID."""
+    """Simulate one trajectory with RK4. Returns shape (N_T, 4) on T_GRID.
+
+    Raises:
+        ValueError: ``params`` is not ``[m_p, b]`` with finite m_p >= 0, b >= 0, or ``coef`` is not
+            a finite (2, 3) array ``[A, f, phi]`` per joint with A >= 0, f > 0 (see ``validate``).
+    """
+    from .validate import validate_coef, validate_params  # lazy: validate imports this module
+
+    params = validate_params(params, ranges=None)[0]
+    coef = validate_coef(coef)
     p = replace(base, m_p=float(params[0]), b=float(params[1]))
     tau = torque_fn(coef)
     f = lambda t, x: state_derivative(t, x, p, tau)
@@ -205,7 +214,17 @@ def simulate_smooth(
     base: ArmParams = ArmParams(),
     substeps: int = 8,
 ) -> np.ndarray:
-    """Simulate one trajectory under a smooth-family torque with RK4. Returns shape (N_T, 4)."""
+    """Simulate one trajectory under a smooth-family torque with RK4. Returns shape (N_T, 4).
+
+    Raises:
+        ValueError: ``params`` is not ``[m_p, b]`` with finite m_p >= 0, b >= 0, or ``coef`` has
+            NaN/infinite entries.
+    """
+    from .validate import validate_params  # lazy: validate imports this module
+
+    params = validate_params(params, ranges=None)[0]
+    if not np.all(np.isfinite(coef)):
+        raise ValueError("coef contains NaN or infinite values")
     p = replace(base, m_p=float(params[0]), b=float(params[1]))
     tau = smooth_torque_fn(coef)
     f = lambda t, x: state_derivative(t, x, p, tau)
