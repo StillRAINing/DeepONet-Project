@@ -57,3 +57,32 @@ def test_flop_counts():
 def test_break_even():
     assert break_even_queries(100, 100, 0.1, 0.0) == pytest.approx(2000)
     assert break_even_queries(100, 100, 0.1, 0.2) == float("inf")
+
+
+# ---------------------------------------------------------------- smooth Fourier family
+@pytest.fixture(scope="module")
+def smooth_inputs():
+    from src.data import sample_smooth_inputs
+    return sample_smooth_inputs(3, np.random.default_rng(1))
+
+
+def test_batched_torque_matches_smooth_samples(smooth_inputs):
+    from src.benchmark import batched_torque
+    from src.data import smooth_torque_samples
+    _, coef = smooth_inputs
+    expected = np.stack([smooth_torque_samples(c) for c in coef])            # (B, 2, N_T)
+    got = np.stack([batched_torque(coef, t) for t in T_GRID], axis=-1)      # (B, 2, N_T)
+    np.testing.assert_allclose(got, expected, rtol=1e-12, atol=1e-12)
+
+
+def test_rk4_batched_matches_simulate_smooth(smooth_inputs):
+    from src.data import simulate_smooth
+    params, coef = smooth_inputs
+    expected = np.stack([simulate_smooth(p, c) for p, c in zip(params, coef)])
+    np.testing.assert_allclose(rk4_batched(params, coef, T_GRID, X0), expected, rtol=1e-9, atol=1e-9)
+
+
+def test_batched_torque_rejects_unknown_shape():
+    from src.benchmark import batched_torque
+    with pytest.raises(ValueError):
+        batched_torque(np.zeros((2, 2, 5)), 0.0)

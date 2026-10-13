@@ -43,6 +43,21 @@ def _as_time_batch(t: torch.Tensor, batch: int) -> torch.Tensor:
     return t.unsqueeze(-1)
 
 
+def time_features(t: torch.Tensor, n_fourier: int) -> torch.Tensor:
+    """(B, n_t, 1) -> (B, n_t, 1 + 2 n_fourier): [t, sin(k pi t), cos(k pi t)] for k = 1..n_fourier.
+
+    t is the rescaled time tau = t / T in [0, 1]. The frequencies k pi are the harmonics of the
+    smooth torque family (period 2T, so mode k has angular frequency k pi in tau), a fixed prior
+    rather than learnt. Without them a tanh MLP on a bare scalar t learns oscillation slowly
+    (spectral bias). ``n_fourier = 0`` returns t unchanged.
+    """
+    if n_fourier == 0:
+        return t
+    w = torch.pi * torch.arange(1, n_fourier + 1, dtype=t.dtype, device=t.device)   # (K,)
+    ang = t * w                                                                      # (B, n_t, K)
+    return torch.cat([t, torch.sin(ang), torch.cos(ang)], dim=-1)
+
+
 class DeepONet(nn.Module):
     """Unstacked DeepONet with one set of p basis functions per output channel.
 
@@ -52,11 +67,11 @@ class DeepONet(nn.Module):
     """
 
     def __init__(self, d_u: int, p: int = 64, width: int = 128,
-                 branch_depth: int = 3, trunk_depth: int = 3):
+                 branch_depth: int = 3, trunk_depth: int = 3, n_fourier: int = 0):
         super().__init__()
-        self.d_u, self.p = d_u, p
+        self.d_u, self.p, self.n_fourier = d_u, p, n_fourier
         self.branch = mlp(d_u, width, branch_depth, N_OUT * p)
-        self.trunk = mlp(1, width, trunk_depth, N_OUT * p)
+        self.trunk = mlp(1 + 2 * n_fourier, width, trunk_depth, N_OUT * p)
         self.bias = nn.Parameter(torch.zeros(N_OUT))
 
     def forward(self, u: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
@@ -65,23 +80,23 @@ class DeepONet(nn.Module):
         B = u.shape[0]
         b = self.branch(u).view(B, N_OUT, self.p)                  # (B, 4, p)
         tt = _as_time_batch(t, B)
-        k = self.trunk(tt).view(B, tt.shape[1], N_OUT, self.p)     # (B, n_t, 4, p)
+        k = self.trunk(time_features(tt, self.n_fourier)).view(B, tt.shape[1], N_OUT, self.p)  # (B, n_t, 4, p)
         return torch.einsum("bkp,btkp->btk", b, k) + self.bias
 
 
 class MLPBaseline(nn.Module):
     """Plain MLP on the concatenated input [u, t] -> 4 outputs, one row per (sample, time)."""
 
-    def __init__(self, d_u: int, width: int = 128, depth: int = 4):
+    def __init__(self, d_u: int, width: int = 128, depth: int = 4, n_fourier: int = 0):
         super().__init__()
-        self.d_u = d_u
-        self.net = mlp(d_u + 1, width, depth, N_OUT)
+        self.d_u, self.n_fourier = d_u, n_fourier
+        self.net = mlp(d_u + 1 + 2 * n_fourier, width, depth, N_OUT)
 
     def forward(self, u: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         if u.ndim != 2 or u.shape[1] != self.d_u:
             raise ValueError(f"u must have shape (B, {self.d_u}); got {tuple(u.shape)}")
         B = u.shape[0]
-        tt = _as_time_batch(t, B)
+        tt = time_features(_as_time_batch(t, B), self.n_fourier)
         x = torch.cat([u.unsqueeze(1).expand(-1, tt.shape[1], -1), tt], dim=-1)
         return self.net(x)
 

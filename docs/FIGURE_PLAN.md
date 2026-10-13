@@ -14,18 +14,20 @@ conclude. Never show a mean without a spread or worst case.
 | 6 | Channel histograms | Justify per-channel normalisation | `results/data_channel_hist.png` | done | heavy tails, units differ |
 | 7 | Parameter coverage of the splits | Define OOD | `results/data_param_coverage.png` | done | what OOD does and does not test |
 | 8 | Peak `|q2|` vs `A2` and `b` | Show regime switching / hard cases | `results/data_peak_vs_inputs.png` | done | bimodality (`REVIEW_NOTES` 2.5) |
-| 9 | Training and validation loss curves (log y) for every model | Show convergence and overfitting | **you** (`train.py`) | not started | where train and val diverge, what you selected on |
-| 10 | Predicted vs true trajectories: best, median, worst test cases (all four channels) | Make accuracy tangible | `evaluate.py` + plotting helper | not started | why the worst case fails |
-| 11 | Relative L2 vs time, per channel, with percentile band | Where it goes wrong | **you** (`evaluate.py`) | not started | definition of the error, why it grows |
-| 12 | Error histogram / CDF over test trajectories (and OOD) | Spread, not just mean | **you** | not started | which fraction exceeds a tolerance |
-| 13 | Error split by regime (flipped vs not) and by `A`, `b` | Explain failures | **you** | not started | link to the bimodality |
+| 9 | Training and validation loss curves (log y) for every model | Show convergence and overfitting | `scripts/plot_training.py` -> `results/loss_*.png` | done for E1/E2 runs | where train and val diverge, what you selected on |
+| 10 | Predicted vs true trajectories: best, median, worst test cases (all four channels) | Make accuracy tangible | `scripts/plot_eval.py` -> `results/evalfig_<split>_<tag>_cases.png` | val draft for E1/E2 | why the worst case fails |
+| 11 | Relative L2 vs time, per channel, with percentile band | Where it goes wrong | metric: `evaluate.error_vs_time`; plot: `scripts/plot_eval.py` (`_time.png`) | val draft for E1/E2 | definition of the error, why it grows |
+| 12 | Error histogram / CDF over test trajectories (and OOD) | Spread, not just mean | `scripts/plot_eval.py` (`_cdf.png`) | val draft for E1/E2 | which fraction exceeds a tolerance |
+| 13 | Error split by regime (flipped vs not) and by `A`, `b` | Explain failures | `scripts/plot_eval.py` (`_regime.png` by peak \|q\|; `_inputs.png` by `b`, `m_p`, peak torque) | val draft for E1/E2 | link to the bimodality |
 | 14 | Physical consistency: `qdot` vs `d q/dt`; energy-balance residual | Does the output obey physics | **you** | not started | why neither is enforced by the loss |
 | 15 | OOD degradation curve: error vs distance beyond range (`m_p`, `b`, and `A`/`f`) | Honest extrapolation | **you** | not started | why this is a degradation curve, not a pass/fail |
-| 16 | Speed table: scalar RK4, vectorised RK4, `solve_ivp` (matched tolerance), MLP, DeepONet; params, FLOPs, memory | The speed claim | `src/benchmark.py` | scaffold done (initial numbers in `REVIEW_NOTES` 5) | what each row's tolerance is, break-even queries incl. data + training |
-| 17 | Four-model comparison (MLP 304-d, MLP compact, DeepONet 304-d, DeepONet compact) at equal tuning budget | Fair baseline | **you** | not started | why compact input is included |
+| 16 | Speed table: scalar RK4, vectorised RK4, `solve_ivp` (matched tolerance), MLP, DeepONet; params, FLOPs, memory | The speed claim | `src/benchmark.py` (`--checkpoint`: smooth family, includes encode/decode, error per `solve_ivp` rtol) | runs; idle-machine numbers still needed (`EXPERIMENTS.md` B0) | what each row's tolerance is, break-even queries incl. data + training |
+| 17 | Four-model comparison (MLP 304-d, MLP compact, DeepONet 304-d, DeepONet compact) at equal tuning budget | Fair baseline | `scripts/plot_eval.py` with the four best checkpoints (`_cdf.png`) | waiting for E3 | why compact input is included |
 | 18 | Seed variance: mean and std of test error over >= 3 seeds | Reproducibility | **you** | not started | why one run is an anecdote |
 
 Colour convention used so far: train `#0072B2`, OOD `#D55E00`, val `#009E73`, test `#CC79A7` (colour-blind safe).
 
 Tables: (a) parameter ranges (README), (b) results (README planned table, extended with p95/max error),
 (c) test report (`pytest --junitxml=results/test_report.xml`), (d) AI-use summary from `AI_LOG.md`.
+
+Final versions of #10 to #13 and #17: `py -3.10 -m scripts.plot_eval <checkpoints> --split test --final` once, after the selection rule in `EXPERIMENTS.md` has fixed the checkpoints. Until then only val figures exist.

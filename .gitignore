@@ -8,3 +8,4 @@ data/*
 *.pt
 *.npz
 .DS_Store
+logs/

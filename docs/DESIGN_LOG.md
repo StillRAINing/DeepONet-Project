@@ -194,6 +194,31 @@ so the random split is balanced. A few training trajectories reach tens to over 
 (max 129 rad): these extreme samples will dominate unnormalised error and should be looked at
 individually when deciding the loss and output normalisation (weak point 5, open item O2).
 
+## A8. Data checks and the normalisation / loss choice (2026-10-12)
+
+AI-run checks on 160 training trajectories (40 each: calm < pi, mid pi to 2 pi, spinning > 2 pi, and the 40
+largest by max |q|). Reference = RK45, rtol 1e-10, atol 1e-12. AI-written code, logged as AI_LOG item 16.
+
+| Check | Result |
+|---|---|
+| Stored RK4 (8 substeps) vs reference, relative L2 | calm median 1.3e-8; mid 4.1e-8; spinning median 9.6e-8, max 7.0e-6; top-40 median 3.8e-5, 95th percentile 2.8e-4, max 2.3e-3 (worst pointwise, peak-normalised: 1.1e-2) |
+| Extreme samples (max 129 rad, qdot up to 96 rad/s) | Finite. Energy balance dE = integral of (tau.qdot - b|qdot|^2) holds to 1e-7 to 3e-6 on the reference solution. Stored RK4 vs reference 3e-5 to 2.3e-3 |
+| Trajectory norm over 151 steps x 4 channels (denominator of a relative loss) | min 31, median 62, max 1030. Never near 0, because gravity swings the arm even when torque ~ 0 |
+| Sensitivity: 1% change of torque coefficients -> relative output change | calm median 0.95; mid 2.4 (95th percentile 23); spinning 4.2 (95th percentile 60, max 183) |
+
+Reading: the earlier 13% truth error was for A up to 15 on the sine family and does not carry over; with the 6 N m cap
+the labels are accurate to well below plausible surrogate error except a few extreme samples (up to 0.23%). Spinning
+trajectories amplify input changes by 10 to 100x, so expect higher surrogate error there (report by group).
+Not yet checked: the 160 samples are a sample, not the whole set; no check on val/test/OOD.
+
+Choice (O2, O3 provisional): per-channel z-score, statistics from the train split only, plus a per-sample relative L2
+loss (`ChannelNormaliser`, `relative_l2_loss` in `src/train.py`). Reasoning is AI-supplied; to compare against plain MSE on
+calm / mid / spinning validation groups before this is final.
+
+| My own words (fill in) |
+|---|
+| [fill in] |
+
 ## B. Weaknesses I have identified and committed to work on
 
 These come from the review of `model.py` and the existing setup. Each needs an experiment, not

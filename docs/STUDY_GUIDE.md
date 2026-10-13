@@ -150,6 +150,49 @@ Status key: [ ] not yet, [x] done. Tick honestly.
 
 ---
 
+## 5b. Defend the code that now exists (added 2026-10-13)
+
+Most of `train.py` and `evaluate.py` was AI-written at your request (AI_LOG rows 16 to 18, 20), so an
+examiner can point at any line. Questions only, no answers. Answer aloud without looking at the code,
+then check against it. Line numbers are as of 2026-10-13.
+
+**`src/train.py`**
+1. `relative_l2_loss`, line 58: `size = true + norm.mean / norm.std`. What is this quantity in raw
+   units? What would the denominator measure if it were just `true`, and for which kind of trajectory
+   would that go badly wrong?
+2. Line 59: why `+ 1e-12` *inside* the square root? What is the derivative of `sqrt(x)` at `x = 0`?
+3. Line 60: can `clamp_min(1e-8)` ever trigger on this dataset? (DESIGN_LOG A8 has the smallest trajectory norm.)
+4. Line 61: is the loss the mean of per-sample ratios or a ratio of sums? Which samples does each one favour?
+5. `InputNormaliser.fit`, line 78: which input features are constant in training, and why does std 1
+   (not a tiny floor) matter for `ood_smooth`?
+6. `evaluate_loss`, line 129: why multiply by `len(pred)` and divide by `len(u)`?
+7. `fit`: why `copy.deepcopy(model.state_dict())`? What would `best_state` contain at the end without the copy?
+8. `fit` selects the epoch on val. Is the val error of the selected model still an unbiased estimate
+   of its error on new data? What is the test split for, then?
+9. Reproducibility bug fixed on 2026-10-13 (`EXPERIMENTS.md`): explain in two sentences why calling
+   `torch.manual_seed` inside `fit` did not make a run reproducible.
+
+**`src/evaluate.py`**
+10. `qdot_consistency`: derive `dq_raw/dt = std_q * dz/dtau / t_final` yourself. Why does the
+    channel mean drop out?
+11. Same function: each sample gets its own copy of the time grid (`tb`, shape (B, n_t)). If all
+    samples shared one (n_t,) tensor, what would `autograd.grad(z.sum(), t)` return instead?
+12. `error_vs_time`: why divide by the whole-trajectory rms and not by `|true(t)|`? What happens at `t = 0`?
+13. `rel_l2_per_channel`: why can a calm `q2` give a ratio above 1 even when the prediction looks fine?
+14. `energy_balance_residual`: why is the residual of the *true* trajectory not zero, and why report
+    the excess over it?
+
+**Reading your own results (val only)**
+15. E2: cosine gives val loss 0.2126 against 0.2178. Why can you not yet say cosine is better? What
+    experiment would let you?
+16. In `results/evalfig_val_E1_E2_deeponet_regime.png`, every learning rate and schedule has about the
+    same median error on trajectories with peak |q| > 2 pi. Give two different explanations (one about
+    the model, one about the physics; DESIGN_LOG A8's sensitivity row) and an experiment that tells them apart.
+17. `val_loss` (a mean) is what selects the checkpoint, but the headline is the median. Can they disagree
+    on which run is best? Is that a problem?
+
+---
+
 ## 6. Design decisions you must be able to justify (and one-line honest answers to draft)
 
 | Decision | Draft your justification here | Evidence you have |

@@ -45,6 +45,24 @@ def test_deeponet_is_differentiable(batch):
     assert all(p.grad is not None for p in model.parameters())
 
 
+@pytest.mark.parametrize("make", [lambda k: DeepONet(D_U, p=8, width=16, n_fourier=k),
+                                  lambda k: MLPBaseline(D_U, width=16, n_fourier=k)])
+def test_fourier_time_features_keep_the_interface(make, batch):
+    u, t = batch
+    plain, ff = make(0), make(6)
+    assert ff(u, t).shape == plain(u, t).shape == (B, N_T, 4)
+    assert n_params(ff) > n_params(plain)          # wider first layer of the trunk / MLP
+
+
+def test_time_features_values():
+    from src.model import time_features
+    t = torch.tensor([[[0.0], [0.5], [1.0]]])      # (1, 3, 1)
+    f = time_features(t, 2)
+    assert f.shape == (1, 3, 5)                     # [t, sin pi t, sin 2 pi t, cos pi t, cos 2 pi t]
+    torch.testing.assert_close(f[0, 1], torch.tensor([0.5, 1.0, 0.0, 0.0, -1.0]), atol=1e-6, rtol=0)
+    assert time_features(t, 0) is t
+
+
 # --- TODO (student): semantic tests the shape tests cannot give (docs/STUDY_GUIDE.md section 3) ---
 todo = pytest.mark.skip(reason="TODO (student): write this test")
 

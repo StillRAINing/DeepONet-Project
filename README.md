@@ -132,6 +132,15 @@ python -m scripts.data_stats                # dataset statistics (per-channel sc
 python -m scripts.data_figures              # dataset figures into results/
 python -m scripts.torque_range_sweep        # compare torque-amplitude caps before fixing ranges
 python -m scripts.input_sensitivity         # how sensitive trajectories are to tiny input changes
+python -m scripts.train_quick --model deeponet --epochs 200   # train (or reload) one model into checkpoints/
+bash scripts/run_sweep.sh                   # the fair-comparison sweep (docs/EXPERIMENTS.md)
+python -m scripts.summarise_runs            # every checkpoint on val -> results/runs.csv
+python -m scripts.plot_training             # loss curves -> results/loss_*.png
+python -m scripts.naive_baselines           # mean-trajectory and nearest-neighbour reference errors (val)
+python -m scripts.truth_check               # accuracy of the stored RK4 labels on every split
+python -m src.benchmark --checkpoint checkpoints/<a>.pt   # timing + matched-tolerance solve_ivp (idle machine!)
+python -m scripts.plot_eval checkpoints/<a>.pt [<b>.pt ...]   # evaluation figures on val
+python -m scripts.plot_eval <final checkpoints> --split test --final   # final figures, once
 pdoc src -o docs                            # build HTML docs
 ```
 
