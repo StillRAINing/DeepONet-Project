@@ -101,6 +101,7 @@ class InputNormaliser:
         return cls(u.mean(axis=0), np.where(std < 1e-8, 1.0, std))
 
     def encode(self, u: torch.Tensor) -> torch.Tensor:
+        """Raw branch input (N, d_u) -> z-scored input using the stored training mean and std."""
         return (u - self.mean) / self.std
 
 
@@ -230,6 +231,7 @@ def save_checkpoint(path, model, kind: str, config: dict, in_norm: InputNormalis
 
 
 def build_model(kind: str, config: dict):
+    """Instantiate ``model.DeepONet`` (kind ``"deeponet"``) or ``model.MLPBaseline`` (``"mlp"``) from its config dict."""
     from .model import DeepONet, MLPBaseline
     return {"deeponet": DeepONet, "mlp": MLPBaseline}[kind](**config)
 

@@ -76,6 +76,7 @@ class Slider:
         return False
 
     def draw(self, surf, font):
+        """Draw the track, in-range segment, handle, label and current value."""
         r = self.rect
         pygame.draw.rect(surf, (55, 60, 72), (r.x, r.centery - 2, r.w, 4), border_radius=2)
         if self.safe:
@@ -129,10 +130,12 @@ def fk(q, p: ArmParams):
 
 
 def to_px(pt):
+    """Convert a point (x, y) in metres (arm frame, y up) to screen pixels (y down)."""
     return (BASE[0] + pt[0] * PX_PER_M, BASE[1] - pt[1] * PX_PER_M)
 
 
 def draw_arm(surf, q, p, color, width=10, alpha_tip=True):
+    """Draw both links for joint angles ``q`` (rad) and arm parameters ``p`` on ``surf``."""
     e, tip = fk(q, p)
     pts = [BASE, to_px(e), to_px(tip)]
     pygame.draw.lines(surf, color, False, pts, width)
@@ -154,6 +157,13 @@ def draw_torque(surf, center, tau, color):
 
 
 class App:
+    """Interactive pygame window: sliders for the inputs, the arm animation, joint plots and energy.
+
+    The RK4 ground truth is always shown; RK45 and any registered surrogates are overlaid.
+    Keys: space pause, [ ] speed, R restart, G passive ghost, K RK45 overlay, N / O random test /
+    out-of-range sample, D defaults, P screenshot.
+    """
+
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((W, H))
@@ -193,17 +203,20 @@ class App:
 
     # ---- model ----------------------------------------------------------
     def inputs(self):
+        """Current slider values as ``(params (2,), coef (2, 3))`` = ``[m_p, b]`` and ``[A, f, phi]`` per joint."""
         v = [s.val for s in self.sliders]
         params = np.array([v[0], v[1]])
         coef = np.array([[v[2], v[3], v[4]], [v[5], v[6], v[7]]])
         return params, coef
 
     def set_inputs(self, params, coef):
+        """Move the sliders to ``params`` and ``coef`` (clipped to each slider's range)."""
         vals = [params[0], params[1], *coef[0], *coef[1]]
         for s, v in zip(self.sliders, vals):
             s.val = float(np.clip(v, s.lo, s.hi))
 
     def solve(self):
+        """Re-run RK4 (and the passive and surrogate overlays) for the current slider values."""
         params, coef = self.inputs()
         self.p = replace(BASE_ARM, m_p=float(params[0]), b=float(params[1]))
         self.traj = simulate(params, coef)
@@ -217,13 +230,16 @@ class App:
         self.surr = {n: f(params, coef) for n, f in SURROGATES.items()}
 
     def solve_rk45(self):
+        """Integrate the current inputs with the adaptive RK45 solver for the overlay."""
         f = lambda t, x: state_derivative(t, x, self.p, self.tau)
         self.rk45 = rk45_integrate(f, X0, T_GRID)
 
     def state_at(self, traj):
+        """Linear interpolation of a (N_T, 4) trajectory at the current animation time ``self.t``."""
         return np.array([np.interp(self.t, T_GRID, traj[:, k]) for k in range(4)])
 
     def load_sample(self, split):
+        """Set the sliders to a random sample of ``split`` from the dataset (no-op if no dataset file)."""
         if self.data is None:
             try:
                 self.data = load()
@@ -236,6 +252,7 @@ class App:
 
     # ---- events ---------------------------------------------------------
     def handle(self, ev):
+        """Process one pygame event: slider drags, time scrubbing and the key bindings."""
         changed = False
         for s in self.sliders:
             changed |= s.handle(ev)
@@ -280,6 +297,7 @@ class App:
 
     # ---- drawing --------------------------------------------------------
     def draw_arm_panel(self):
+        """Draw the arm animation panel with tip trails, legend and the status text."""
         s = self.screen
         pygame.draw.rect(s, PANEL, (10, 10, ARM_W - 10, H - 20), border_radius=8)
         # reach circle and ground reference
@@ -320,9 +338,11 @@ class App:
             s.blit(self.font.render(line, True, col), (24, H - 100 + i * 18))
 
     def in_range(self):
+        """True if every slider is inside its training range (bright part of the track)."""
         return all(sl.safe is None or sl.safe[0] <= sl.val <= sl.safe[1] for sl in self.sliders)
 
     def arm_sets(self):
+        """List of ``(name, trajectory, colour)`` to draw: RK4, optional RK45, then each surrogate."""
         sets = [("RK4", self.traj, C_GT)]
         if self.show_rk45 and self.rk45 is not None:
             sets.append(("RK45 (adaptive)", self.rk45, C_RK45))
@@ -331,6 +351,7 @@ class App:
         return sets
 
     def draw_panels(self):
+        """Draw the sliders and the angle, velocity and energy plots."""
         s = self.screen
         s.blit(self.big.render("Parameters (bright track = training range)", True, FG), (ARM_W + 30, 12))
         for sl in self.sliders:
@@ -352,6 +373,7 @@ class App:
         draw_plot(s, rects[2], self.font, T_GRID, e_series, self.t, "total energy", "(J)")
 
     def run(self, max_frames=None, screenshot=None):
+        """Main loop. ``max_frames`` stops after that many frames; ``screenshot`` saves the last frame to that path."""
         self.scrub = False
         frames = 0
         running = True
@@ -379,6 +401,7 @@ class App:
 
 
 def main():
+    """Open the visualiser window (``python -m src.viz``)."""
     App().run()
 
 
