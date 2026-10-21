@@ -6,3 +6,4 @@ pytest
 pdoc
 jupyter
 pygame-ce
+psutil

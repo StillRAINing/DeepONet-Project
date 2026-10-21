@@ -314,7 +314,7 @@ steps of 0.5 %. Timings are not part of this evaluation (see B0, still prelimina
 
 Decision (student): [fill in: which model is the headline, and how the report frames points 2, 4 and 7]
 
-## E4. Fair-fight improvements (code added 2026-10-13, AI-written, NOT YET RUN)
+## E4. Fair-fight improvements (code added 2026-10-13, AI-written; run 2026-10-14 to 15, results below)
 
 Question: can the DeepONet beat the MLP under an equal-effort protocol? Every change below is
 available to both families (same flag, same budget, same selection on validation relative L2).
@@ -328,21 +328,138 @@ available to both families (same flag, same budget, same selection on validation
 | Off-grid query times | `scripts/offgrid_eval.py <ckpts>` | interpolation in t. Both models take t continuously, so this is NOT a DeepONet-specific test |
 | Variants for both families | `scripts/run_improve.sh <lr> <sched>` | ff6, cons 0.1, both; each differs from the base by one thing |
 
-Prediction before running (student to fill in): [fill in]
+Prediction before running (student to fill in): [fill in] (AI_LOG row 29 correction records it: "Fourier
+features will improve the trunk and might let the DeepONet beat the MLP".)
 
-Results: [not run yet]
+### E4 results (AI-written 2026-10-15 from `runs_agg.csv`, `final_eval_ff6*.csv`; tables in `results/final_analysis.md`)
 
-Decision: [fill in]
+Runs: ff6 = `--fourier 6` for all four models at each model's selected lr, 3 seeds
+(`scripts/run_ff6_psweep.sh`); ff6 + cons = Fourier features plus the qdot = dq/dt penalty at weight 0.1, samples
+input, both families, 3 seeds (`scripts/run_cons_seeds.sh`); cons only, 1 seed per family; data size n = 500 to
+7000, lr 1e-3 cosine, 1 seed (`scripts/run_datasize.sh`); DeepONet p sweep 8 to 256 at equal budget and at fixed
+width 128, compact input, 1 seed (`run_ff6_psweep.sh`, `run_psweep_fixedwidth.sh`). Selection and comparison on
+**validation** only. The ff6 and ff6 + cons checkpoints were also evaluated on test/OOD afterwards
+(`results/final_eval_ff6.md`, `final_eval_ff6cons.md`), as reported variants, not a re-selection.
+
+Validation, mean +- std over 3 seeds (`results/e4_variants.png`):
+
+| model | input | base val loss | ff6 | ff6 + cons 0.1 | base consistency | ff6 + cons consistency |
+|---|---|---|---|---|---|---|
+| MLP | coef | 0.1703 +- 0.0026 | 0.1756 +- 0.0002 | not run | 0.244 | (ff6: 0.421) |
+| MLP | samples | 0.1756 +- 0.0024 | 0.1696 +- 0.0006 | **0.1655 +- 0.0008** | 0.222 | 0.115 |
+| DeepONet | coef | 0.2017 +- 0.0034 | 0.2006 +- 0.0009 | not run | 0.109 | (ff6: 0.058) |
+| DeepONet | samples | 0.2168 +- 0.0039 | 0.1958 +- 0.0018 | 0.1974 +- 0.0002 | 0.149 | **0.008** |
+
+Observations:
+1. **Fourier time features help the samples-input models clearly** (DeepONet -0.021 in val loss, about 5 seed
+   std; MLP -0.006, about 2.5 std) and the compact ones not at all (MLP coef is slightly worse, +0.005).
+   Half of the student's prediction held: the trunk improved, but **the MLP still wins**. Best DeepONet
+   (0.196) vs best MLP (0.166): the gap shrank from about 0.031 to 0.030 in val loss. No E4 change closes it.
+2. **The consistency penalty works and costs nothing in accuracy.** DeepONet: consistency 0.071 -> 0.008
+   (9x), val loss unchanged within noise. MLP: 0.303 -> 0.115, val loss slightly better. With the penalty
+   both families are self-consistent; without it the DeepONet is the more consistent one (it was 0.11 to
+   0.15 vs the MLP's 0.22 to 0.24 at base). Fourier features make the MLP *less* consistent (0.22 -> 0.30
+   samples, 0.24 -> 0.42 coef): the extra high-frequency inputs let q wiggle where qdot does not.
+3. **Test agrees with validation.** ff6 + cons on test: MLP samples median 0.066 +- 0.002 (best of every
+   configuration evaluated), DeepONet samples 0.109 +- 0.002. Rule-selected best: MLP coef 0.071. No variant
+   changes the p95 (0.58 to 0.66 everywhere) or the amplitude extrapolation (0.53 to 0.62 on `ood_amp1`).
+4. **Data size** (`results/e4_datasize.png`): median error falls about as n^-0.5 (slopes -0.43 to -0.55)
+   with no saturation at 7000; p95 falls only 0.77-0.82 -> 0.64-0.68. MLPs lead at every n >= 1000.
+   The DeepONet does **not** overtake at small n (at n = 500 the four are within 0.06 of each other, MLP coef still best).
+5. **p sweep** (`results/e4_psweep.png`): p = 8 is clearly worse (val loss 0.25, best epoch 49 to 66);
+   p = 16 to 128 is a plateau within about 2 seed std; at equal budget p = 256 (width 71) is worse. p = 32
+   is marginally lowest (0.199 vs 0.206 at p = 64, one seed). p = 64 is a defensible choice (W2).
+
+Decision: [fill in: (a) does the headline stay the rule-selected four (recommended: yes; report E4 as
+follow-up), (b) whether to quote the ff6 + cons MLP as "best configuration found" with the caveat that test was
+seen for it]
+
+## B1. Speed benchmark, final (2026-10-15 21:28, AI-run, `py -3.10 -m scripts.run_benchmark`)
+
+Supersedes B0 and the 2026-10-14 contended run. Full tables: `results/benchmark.md`; figures
+`results/bench_pareto.png`, `bench_batch.png`, `bench_breakeven.png`; break-even vs batched RK4 in
+`results/final_analysis.md`. No training or other benchmark ran alongside; background desktop load was 30 to 35 %
+(see the banner in `benchmark.md`), so absolute ms may be up to ~20 to 30 % high.
+
+| Method (64 val trajectories) | ms / traj | median err | p95 err |
+|---|---|---|---|
+| scalar Python RK4 (made the labels), one at a time | 266 | (truth) | |
+| vectorised NumPy RK4, batch 64 / batch 1500 | 8.7 / 1.48 | exact (1e-15) | |
+| `solve_ivp` RK45 rtol 0.03 / 0.05 (matched to surrogate median) | 14.0 / 14.5 | 0.075 / 0.116 | 0.71 / 1.05 |
+| `solve_ivp` RK45 rtol 1e-3 | 20.6 | 0.002 | 0.067 |
+| MLP coef / samples, batch 64 | 0.37 / 0.32 | 0.074 / 0.071 | 0.60 / 0.55 |
+| DeepONet coef / samples, batch 64 | 0.23 / 0.21 | 0.097 / 0.115 | 0.64 / 0.66 |
+| DeepONet, trunk cached, batch 64 | 0.03 | same | same |
+
+Observations:
+1. **The fair rival is batched RK4, not `solve_ivp`.** Vectorised RK4 is exact and already faster than
+   `solve_ivp` at the surrogates' (poor) error level; `solve_ivp` at rtol 0.08 to 0.1 even fails on 1 to 2 of
+   64 trajectories. At matched *median* error `solve_ivp`'s p95 is similar to or worse than the surrogates'.
+2. **Speed-up shrinks with batch size**: about 170 to 310x at batch 1, 27 to 52x at batch 64, 5 to 11x at
+   batch 1500 (un-cached surrogates). The DeepONet with its trunk cached stays about 290 to 400x faster than RK4 at every batch,
+   because a query then costs one branch pass; the MLP cannot do this. This is the one clear DeepONet win.
+3. **Training dominates the up-front cost**: 800 to 1700 s per run (idle), data generation 17 s vectorised
+   (2,660 s with the scalar solver actually used). Break-even: 57k to 128k queries vs matched `solve_ivp`;
+   0.56M to 1.4M vs batched RK4 at batch 1500; about 5x more if the 5-run lr grid is counted.
+4. FLOPs per trajectory: MLP 5.2e7, DeepONet 2.0 to 2.5e7, DeepONet cached 2.6e5 to 2.9e5. Parameter memory
+   0.69 MB for every model.
+
+Run events: first rerun crashed in the CSV writer after measuring (fixed, rerun); the earlier
+2026-10-14 run was contended at 100 % CPU and is superseded.
+
+## E5. Final analysis of the selected models (2026-10-15, AI-run, `py -3.10 -m scripts.final_analysis`)
+
+After the selection rule; nothing chosen here. Tables: `results/final_analysis.md`. Figures:
+`results/final_overview.png`, `final_consistency.png` (#14), `final_ood_degradation.png` (#15),
+`final_seeds.png` (#18), `final_sensitivity.png`, `evalfig_{test,ood_amp1,ood_smooth}_final4_*.png`
+(#10 to #13, #17 on test and two OOD sets).
+
+Findings (seed 3001 per-sample, unless "3 seeds"):
+1. **Where the error lives.** By regime (peak |q|): < pi (67 % of test) median 0.045 to 0.089; pi to 2 pi
+   0.12 to 0.18; > 2 pi 0.37 to 0.54 for every model. By time: the median error grows about 4x from
+   t = 1 s to t = 3 s; the p90 grows 6 to 9x. By channel (3 seeds): q1 0.03, q2 0.16 to 0.21, q1dot 0.08 to
+   0.15, q2dot 0.19 to 0.35: the elbow and the velocities are the hard part.
+2. **Naive yardsticks on test**: mean training trajectory median 0.43 (p95 0.87); 1-NN 0.42 (p95 1.01).
+   Every model beats them 3 to 6x at the median, but only by ~25 % at p95.
+3. **The tail is a property of the map, not only of the networks.** Perturbing every input by ~1 % moves the
+   true trajectory by 0.6 % (median) for calm samples but 4 to 8 % (p90 32 to 56 %) for spinning ones;
+   Spearman correlation between that sensitivity and the MLP's error is +0.81
+   (`results/final_sensitivity.png`). Correlation, not proof.
+4. **Out of range.** Amplitude: error grows ~20x across the training range itself, roughly doubles across
+   the 6 N m edge, then saturates at 0.6 to 0.8 (no cliff). m_p, b: once matched on trajectory size, OOD
+   errors equal in-range ones within +-25 % (a mild shift). Rougher torque: samples input beats coef input
+   for both families (3 seeds, beyond seed noise), the one place where function-as-samples input pays off.
+5. **Physics.** Consistency (rms(dq/dt - qdot) / rms(qdot)): DeepONet 0.10 to 0.15, MLP 0.23 to 0.26; with the
+   E4 penalty 0.009 and 0.12. Energy-balance excess follows accuracy (MLP 0.15 to 0.17, DeepONet 0.21 to 0.25
+   of the energy swing), and its p95 exceeds 1 for every model: on hard trajectories the predictions do not
+   obey the energy balance at all.
+6. **Initial condition (W5).** Median |x_pred(0)| is 0.3 to 1.3 % of the channel rms for positions and 1.3 to
+   6.3 % for velocities; worst for the MLP with samples input. Not enforced by any model.
+7. **Seeds** (`final_seeds.png`): the seed std of the test median is 0.000 to 0.007, far below the
+   MLP-vs-DeepONet gap (0.03 to 0.06); p95 spread 0.004 to 0.018.
+
+## V1. Verification of the ground truth and the tests (2026-10-15, AI-run)
+
+- `scripts/solver_figures.py` -> `results/solver_checks.md`, FIGURE_PLAN #2 to #4. RK4 order 4.00 to 4.12 on
+  y' = -y; on a calm arm sample orders approach 4 (3.83, 3.92, 3.96 at the smallest h); on the most violent
+  test sample the coarse steps are not yet asymptotic and mid-range orders are about 5. Energy with b = 0,
+  tau = 0: drift 4.3e-5 J at the dataset step (relative 2e-6); 16x-or-more per halving. Energy balance with
+  torque + friction: residual 1.2e-3 J on the 2.5 ms grid vs 7.4e-2 J on the 20 ms output grid (the floor the
+  evaluation subtracts). Labels vs DOP853: 3e-8 (calm), 5e-5 (most violent test), 2.4e-2 (most violent
+  ood_amp2).
+- `scripts/mutation_check.py` -> `results/mutation_check.md`: 10 deliberate bugs, one at a time, in a temp copy.
+  9 of 10 are caught by a targeted test (not only by the cross-implementation checks in `test_benchmark.py`).
+  The three dynamics/solver survivors of the 2026-10-12 review are now caught: both parallel-axis bugs by
+  `test_payload_inertia_matches_brute_force_at_mid_range_payload`, the perturbed RK4 stage by the exact-solution,
+  order and `solve_ivp` agreement tests. Still missed: the phase range halved in the **sine** family sampler
+  (diagnostics only; the smooth family has no phase input).
 
 ## Not yet run
 
-- E4 (architecture / Fourier features / consistency loss) under an equal-effort rule. A single
-  `deeponet_samples_lr1e-3_cosine_ff6_seed3001` log exists from another AI session; it is not part of
-  the selection and was not used here.
-- Data-size learning curve (`scripts/run_datasize.sh`).
-- Speed benchmark on an idle machine, with the final checkpoints (B0 is preliminary).
+Nothing required. Optional: rerun `scripts/run_benchmark.py` with desktop programs closed (3 minutes) to
+confirm the ms figures; a seed-1/2 replicate of the data-size and p sweeps.
 
-## B0. Speed vs accuracy, first look (2026-10-13 15:37, AI-run, PRELIMINARY)
+## B0. Speed vs accuracy, first look (2026-10-13 15:37, AI-run, PRELIMINARY; superseded by B1)
 
 `python -m src.benchmark --checkpoint <ckpt>` (added today; smooth family, **val** split, the
 surrogate time includes building, normalising and decoding the input/output). Run on 8 to 16 val

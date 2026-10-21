@@ -1,6 +1,8 @@
 """Selection-rule step 3 (docs/EXPERIMENTS.md): evaluate the 12 final checkpoints ONCE on test and OOD.
 
-    py -3.10 -m scripts.final_eval
+    py -3.10 -m scripts.final_eval            # the 12 rule-selected checkpoints
+    py -3.10 -m scripts.final_eval --ff6      # E4 follow-up: the same settings with Fourier time features
+    py -3.10 -m scripts.final_eval --ff6cons  # E4 follow-up: Fourier features + consistency penalty (samples input)
 
 The four settings were fixed from validation results before this script was run, and each was trained
 with seeds 3001, 1 and 2. Nothing may be re-tuned after reading this output; if a setting is changed
@@ -25,6 +27,17 @@ FINAL = {  # (model, input) -> checkpoint stem without the seed part; from EXPER
     ("deeponet", "coef"): "deeponet_p64_w147_ep200_lr0.003_n7000_seed{s}_coef_cosine",
     ("deeponet", "samples"): "deeponet_p64_w128_ep200_lr0.001_n7000_seed{s}_cosine",
 }
+FINAL_FF6 = {  # same four settings retrained with --fourier 6 (E4 follow-up); chosen/compared on validation only
+    ("mlp", "coef"): "mlp_w227_ep200_lr0.003_n7000_seed{s}_coef_cosine_ff6",
+    ("mlp", "samples"): "mlp_w191_ep200_lr0.001_n7000_seed{s}_cosine_ff6",
+    ("deeponet", "coef"): "deeponet_p64_w146_ep200_lr0.003_n7000_seed{s}_coef_cosine_ff6",
+    ("deeponet", "samples"): "deeponet_p64_w127_ep200_lr0.001_n7000_seed{s}_cosine_ff6",
+}
+FINAL_FF6CONS = {  # ff6 + qdot = dq/dt penalty (weight 0.1); samples input only (E4 follow-up, validation-chosen)
+    ("mlp", "samples"): "mlp_w191_ep200_lr0.001_n7000_seed{s}_cosine_ff6_cons0.1",
+    ("deeponet", "samples"): "deeponet_p64_w127_ep200_lr0.001_n7000_seed{s}_cosine_ff6_cons0.1",
+}
+VARIANTS = {"": FINAL, "ff6": FINAL_FF6, "ff6cons": FINAL_FF6CONS}
 SEEDS = (3001, 1, 2)
 SPLITS = ("test", "ood", "ood_amp1", "ood_amp2", "ood_smooth")
 METRICS = ("median", "p95", "max", "under_1pct", "under_5pct", "under_10pct",
@@ -52,10 +65,14 @@ def evaluate(path, d, split):
     return row
 
 
-def main():
+def main(variant=""):
+    """variant "" = the rule-selected models; "ff6" / "ff6cons" = E4 follow-ups, written to
+    results/final_eval_<variant>.*; the original files are left untouched."""
+    models = VARIANTS[variant]
+    suffix = f"_{variant}" if variant else ""
     d = load(DATA_PATH_SMOOTH)
     rows = []
-    for (model, inp), stem in FINAL.items():
+    for (model, inp), stem in models.items():
         for s in SEEDS:
             path = ROOT / "checkpoints" / f"{stem.format(s=s)}.pt"
             for split in SPLITS:
@@ -63,13 +80,15 @@ def main():
                 rows.append({"model": model, "input": inp, "seed": s, "split": split, "n": len(d[f"{split}_traj"]),
                              **{k: round(float(v), 4) for k, v in r.items()}})
                 print(f"{model:8s} {inp:7s} seed {s:4d} {split:10s} median {r['median']:.4f}  p95 {r['p95']:.4f}")
-    out = ROOT / "results" / "final_eval.csv"
+    out = ROOT / "results" / f"final_eval{suffix}.csv"
     with open(out, "w", newline="") as f:
         w = csv.DictWriter(f, list(rows[0]))
         w.writeheader()
         w.writerows(rows)
 
-    lines = ["# Final evaluation: test and OOD (selection-rule step 3)", "",
+    title = ("# Final evaluation: test and OOD (selection-rule step 3)" if not variant else
+             f"# E4 follow-up `{variant}`: test and OOD (evaluated after the selection rule; not a re-selection)")
+    lines = [title, "",
              "Generated once by `scripts/final_eval.py`. Mean +- sample std over seeds 3001, 1, 2. "
              "Headline error: per-sample relative L2, channels scaled by the train std. "
              "`q2`: median own-scale relative L2 of q2. `consistency`: median rms(dq/dt - qdot) / rms(true qdot). "
@@ -81,7 +100,7 @@ def main():
                   "| model | input | median | p95 | max | under 5 % | under 10 % | q2 | consistency"
                   + (" | energy |" if split == "test" else " |"),
                   "|---|---|---|---|---|---|---|---|---" + ("|---|" if split == "test" else "|")]
-        for (model, inp) in FINAL:
+        for (model, inp) in models:
             sel = [r for r in rows if r["model"] == model and r["input"] == inp and r["split"] == split]
             def ms(k, pct=False):
                 v = np.array([r[k] for r in sel]) * (100 if pct else 1)
@@ -90,9 +109,10 @@ def main():
                      ms("under_10pct", True), ms("q2"), ms("consistency")] + ([ms("energy_excess_rel")] if split == "test" else [])
             lines.append("| " + " | ".join(cells) + " |")
         lines.append("")
-    (ROOT / "results" / "final_eval.md").write_text("\n".join(lines), encoding="utf8")
-    print("wrote", out, "and results/final_eval.md")
+    (ROOT / "results" / f"final_eval{suffix}.md").write_text("\n".join(lines), encoding="utf8")
+    print("wrote", out, "and", out.with_suffix(".md"))
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main("ff6cons" if "--ff6cons" in sys.argv else "ff6" if "--ff6" in sys.argv else "")

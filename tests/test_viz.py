@@ -41,6 +41,33 @@ def test_smooth_family_app_scales_the_stored_torque_shape_and_overlays_surrogate
         viz.SURROGATES.clear()
 
 
+def test_demo_registers_all_four_selected_models_and_they_track_rk4():
+    import numpy as np
+
+    from src import demo, viz
+
+    files = demo.checkpoints("base")
+    assert sorted(files) == ["DeepONet coef", "DeepONet samples", "MLP coef", "MLP samples"]
+    if not all((demo.CKPT_DIR / f).exists() for f in files.values()):
+        pytest.skip("checkpoints not available")
+    demo.register_surrogates(files)
+    try:
+        app = viz.App(family="smooth")
+        for name, tr in app.surr.items():
+            assert tr.shape == app.traj.shape and np.isfinite(tr).all(), name
+            assert app.rel_l2(tr) < 0.5, name  # loose: catches a wrong input path, not accuracy
+        app.run(max_frames=3)
+    finally:
+        viz.SURROGATES.clear()
+
+
+def test_demo_rejects_unknown_model_key():
+    from src import demo
+
+    with pytest.raises(ValueError, match="unknown models"):
+        demo.checkpoints("ff6cons", ["deeponet-coef"])  # ff6cons has samples-input models only
+
+
 def test_unknown_family_is_rejected():
     from src.viz import App
 

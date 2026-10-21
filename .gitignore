@@ -9,3 +9,7 @@ data/*
 *.npz
 .DS_Store
 logs/
+
+# IDE settings and course material (local only)
+.vscode/
+MMA3001 Workshop*.pdf

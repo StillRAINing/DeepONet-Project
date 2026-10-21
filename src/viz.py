@@ -47,7 +47,7 @@ C_GT = (90, 190, 255)
 C_RK45 = (255, 200, 80)
 C_GHOST = (120, 124, 138)
 C_Q1, C_Q2 = (110, 220, 150), (255, 130, 130)
-SUR_COLORS = [(210, 130, 255), (255, 160, 90), (130, 255, 230)]
+SUR_COLORS = [(210, 130, 255), (255, 160, 90), (130, 255, 230), (255, 110, 200)]
 RESULTS = Path(__file__).resolve().parent.parent / "results"
 
 
@@ -92,7 +92,10 @@ class Slider:
 
 
 def draw_plot(surf, rect, font, t, series, cursor_t, title, unit=""):
-    """Draw line series [(label, color, y_array)] against t with a time cursor."""
+    """Draw line series [(label, color, y_array, width)] against t with a time cursor.
+
+    Series with ``label=None`` are drawn but left out of the in-panel legend (the network and RK45
+    traces, which are named once in the shared legend above the plots instead)."""
     pygame.draw.rect(surf, PANEL, rect, border_radius=6)
     ys = np.concatenate([s[2] for s in series])
     lo, hi = float(ys.min()), float(ys.max())
@@ -114,7 +117,7 @@ def draw_plot(surf, rect, font, t, series, cursor_t, title, unit=""):
     lx = rect.right - 8
     seen = set()
     for label, col, *_ in reversed(series):
-        if label in seen:
+        if label is None or label in seen:
             continue
         seen.add(label)
         img = font.render(label, True, col)
@@ -397,6 +400,21 @@ class App:
             sets.append((n, tr, SUR_COLORS[i % len(SUR_COLORS)]))
         return sets
 
+    def draw_plot_legend(self, rect):
+        """Shared legend for the three plots: thick lines are RK4, thin lines the overlays (wraps to new rows)."""
+        overlays = self.arm_sets()[1:]
+        if not overlays:  # only RK4 drawn: the per-plot q1 / q2 legend says it all
+            return
+        s = self.screen
+        s.blit(self.font.render("Plots: thick = RK4 (green joint 1, red joint 2), thin =", True, DIM), (rect.x, rect.y))
+        x, y = rect.x, rect.y + 20
+        for name, _, col in overlays:
+            img = self.font.render(name, True, col)
+            if x > rect.x and x + img.get_width() > rect.right:
+                x, y = rect.x, y + 18
+            s.blit(img, (x, y))
+            x += img.get_width() + 16
+
     def draw_panels(self):
         """Draw the sliders and the angle, velocity and energy plots."""
         s = self.screen
@@ -409,11 +427,12 @@ class App:
         qd = [("qd1", C_Q1, self.traj[:, 2], 2), ("qd2", C_Q2, self.traj[:, 3], 2)]
         for n, tr in self.surr.items():
             col = SUR_COLORS[list(self.surr).index(n) % len(SUR_COLORS)]
-            q += [(n, col, tr[:, 0], 1), (n, col, tr[:, 1], 1)]
-            qd += [(n, col, tr[:, 2], 1), (n, col, tr[:, 3], 1)]
+            q += [(None, col, tr[:, 0], 1), (None, col, tr[:, 1], 1)]
+            qd += [(None, col, tr[:, 2], 1), (None, col, tr[:, 3], 1)]
         if self.show_rk45 and self.rk45 is not None:
-            q += [("RK45", C_RK45, self.rk45[:, 0], 1), ("RK45", C_RK45, self.rk45[:, 1], 1)]
-            qd += [("RK45", C_RK45, self.rk45[:, 2], 1), ("RK45", C_RK45, self.rk45[:, 3], 1)]
+            q += [(None, C_RK45, self.rk45[:, 0], 1), (None, C_RK45, self.rk45[:, 1], 1)]
+            qd += [(None, C_RK45, self.rk45[:, 2], 1), (None, C_RK45, self.rk45[:, 3], 1)]
+        self.draw_plot_legend(pygame.Rect(x0, 212, wid, 70))
         draw_plot(s, rects[0], self.font, T_GRID, q, self.t, "joint angles", "(rad)")
         draw_plot(s, rects[1], self.font, T_GRID, qd, self.t, "joint velocities", "(rad/s)")
         e_series = [("E", FG, self.energy, 2)]

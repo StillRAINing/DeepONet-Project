@@ -4,30 +4,37 @@ Each figure should be explainable by you without help. "Status" shows what exist
 figure states its split (train / val / test / OOD), its metric definition, and what a reader should
 conclude. Never show a mean without a spread or worst case.
 
-| # | Figure / table | Purpose | Produced by | Status | You must be able to explain |
+Status updated 2026-10-15: every figure exists. "AI-made" means the plotting code was written by the AI
+(AI_LOG rows 37 to 41); you still have to be able to explain every curve. Numbers behind each figure:
+`results/final_analysis.md`, `results/solver_checks.md`, `results/benchmark.md`.
+
+| # | Figure / table | Purpose | File | Status | You must be able to explain |
 |---|---|---|---|---|---|
-| 1 | Arm schematic with conventions (`q1` from horizontal, `q2` relative, payload at tip) | Define the problem | `src/viz.py` screenshot (`P` key) or hand sketch | viz exists | the conventions, and why gravity enters as `cos q1` |
-| 2 | RK4 convergence: error vs `h`, log-log, slope 4 | Trust the ground truth | **you** (`tests/test_solvers.py`) | not started | local vs global error, why the slope flattens at tiny `h` |
-| 3 | Energy conservation (`b = 0`, `tau = 0`) and energy balance with torque/friction | Trust the physics | **you** | not started | why raw energy is not conserved with friction |
-| 4 | RK4 vs `solve_ivp` agreement on a mild and a spinning sample | Cross-check, show where truth degrades | **you** | not started | the unconverged tail (`REVIEW_NOTES` 2.2) |
-| 5 | Sample trajectories, train vs OOD | Show the task difficulty | `scripts/data_figures.py` -> `results/data_trajectories.png` | done | symlog axis, why OOD looks calmer |
+| 1 | Arm schematic with conventions (`q1` from horizontal, `q2` relative, payload at tip) | Define the problem | `src/viz.py` screenshot (`P` key) or hand sketch | **to do (you)** | the conventions, and why gravity enters as `cos q1` |
+| 2 | RK4 convergence: error vs `h`, log-log, slope 4 | Trust the ground truth | `results/solver_convergence.png` (`scripts/solver_figures.py`) | done (AI-made) | local vs global error; why the violent sample is not asymptotic at large h and shows order ~5 at mid h |
+| 3 | Energy conservation (`b = 0`, `tau = 0`) and energy balance with torque/friction | Trust the physics | `results/solver_energy.png` | done (AI-made) | why raw energy is not conserved with friction; why the 20 ms residual is larger (quadrature, not RK4) |
+| 4 | RK4 labels vs DOP853 on a calm, a violent test and a violent OOD sample | Cross-check, show where truth degrades | `results/solver_vs_dop853.png` | done (AI-made) | why the error grows after the elbow starts spinning |
+| 5 | Sample trajectories, train vs OOD | Show the task difficulty | `results/data_trajectories.png` | done | symlog axis, why OOD looks calmer |
 | 6 | Channel histograms | Justify per-channel normalisation | `results/data_channel_hist.png` | done | heavy tails, units differ |
 | 7 | Parameter coverage of the splits | Define OOD | `results/data_param_coverage.png` | done | what OOD does and does not test |
-| 8 | Peak `|q2|` vs `A2` and `b` | Show regime switching / hard cases | `results/data_peak_vs_inputs.png` | done | bimodality (`REVIEW_NOTES` 2.5) |
-| 9 | Training and validation loss curves (log y) for every model | Show convergence and overfitting | `scripts/plot_training.py` -> `results/loss_*.png` | done for E1/E2 runs | where train and val diverge, what you selected on |
-| 10 | Predicted vs true trajectories: best, median, worst test cases (all four channels) | Make accuracy tangible | `scripts/plot_eval.py` -> `results/evalfig_<split>_<tag>_cases.png` | val draft for E1/E2 | why the worst case fails |
-| 11 | Relative L2 vs time, per channel, with percentile band | Where it goes wrong | metric: `evaluate.error_vs_time`; plot: `scripts/plot_eval.py` (`_time.png`) | val draft for E1/E2 | definition of the error, why it grows |
-| 12 | Error histogram / CDF over test trajectories (and OOD) | Spread, not just mean | `scripts/plot_eval.py` (`_cdf.png`) | val draft for E1/E2 | which fraction exceeds a tolerance |
-| 13 | Error split by regime (flipped vs not) and by `A`, `b` | Explain failures | `scripts/plot_eval.py` (`_regime.png` by peak \|q\|; `_inputs.png` by `b`, `m_p`, peak torque) | val draft for E1/E2 | link to the bimodality |
-| 14 | Physical consistency: `qdot` vs `d q/dt`; energy-balance residual | Does the output obey physics | **you** | not started | why neither is enforced by the loss |
-| 15 | OOD degradation curve: error vs distance beyond range (`m_p`, `b`, and `A`/`f`) | Honest extrapolation | **you** | not started | why this is a degradation curve, not a pass/fail |
-| 16 | Speed table: scalar RK4, vectorised RK4, `solve_ivp` (matched tolerance), MLP, DeepONet; params, FLOPs, memory | The speed claim | `src/benchmark.py` (`--checkpoint`: smooth family, includes encode/decode, error per `solve_ivp` rtol) | runs; idle-machine numbers still needed (`EXPERIMENTS.md` B0) | what each row's tolerance is, break-even queries incl. data + training |
-| 17 | Four-model comparison (MLP 304-d, MLP compact, DeepONet 304-d, DeepONet compact) at equal tuning budget | Fair baseline | `scripts/plot_eval.py` with the four best checkpoints (`_cdf.png`) | waiting for E3 | why compact input is included |
-| 18 | Seed variance: mean and std of test error over >= 3 seeds | Reproducibility | **you** | not started | why one run is an anecdote |
+| 8 | Peak `|q2|` vs `A2` and `b` | Show regime switching / hard cases | `results/data_peak_vs_inputs.png` | done (sine family; still valid as motivation) | bimodality (`REVIEW_NOTES` 2.5) |
+| 9 | Training and validation loss curves | Convergence and overfitting | `results/loss_by_model.png`, `results/loss_<run>.png` | done | where train and val diverge, what you selected on |
+| 10 | Best / median / worst test cases, all four channels | Make accuracy tangible | `results/evalfig_test_final4_cases.png` (MLP coef; also `_ood_amp1_`, `_ood_smooth_`) | done | why the worst case fails (elbow flip predicted wrongly) |
+| 11 | Error vs time, per channel, with percentile band | Where it goes wrong | `results/evalfig_test_final4_time.png` | done | definition (divided by the whole-trajectory rms), why it grows |
+| 12 | Error CDF over test (and OOD) | Spread, not just mean | `results/evalfig_test_final4_cdf.png`, `_ood_amp1_`, `_ood_smooth_` | done | which fraction exceeds a tolerance |
+| 13 | Error by regime and by inputs | Explain failures | `results/evalfig_test_final4_regime.png`, `_inputs.png` | done | link to the spinning regime |
+| 14 | Physical consistency (`qdot` vs `dq/dt`) and energy-balance excess | Does the output obey physics | `results/final_consistency.png` | done (AI-made) | why neither is in the data loss; what the penalty term does |
+| 15 | OOD degradation: amplitude curve, matched m_p/b comparison, rougher torque by input type | Honest extrapolation | `results/final_ood_degradation.png` | done (AI-made) | why it is a degradation curve; why m_p/b OOD is easy |
+| 16 | Speed: accuracy vs cost, batch-size sweep, break-even | The speed claim | `results/bench_pareto.png`, `bench_batch.png`, `bench_breakeven.png`; table `results/benchmark.md` | done (AI-made) | why batched RK4 is the fair rival; why the cached trunk is a real DeepONet advantage |
+| 17 | Four-model comparison at equal tuning budget | Fair baseline | `results/final_overview.png` + `evalfig_test_final4_cdf.png` | done | why compact input is included |
+| 18 | Seed variance | Reproducibility | `results/final_seeds.png` | done (AI-made) | why one run is an anecdote |
+| extra | Input sensitivity of the true map vs surrogate error | Why the tail is hard | `results/final_sensitivity.png` | done (AI-made) | correlation, not proof |
+| extra | E4: Fourier features / consistency penalty; data size; p sweep | Fair-fight improvements, W2 | `results/e4_variants.png`, `e4_datasize.png`, `e4_psweep.png` | done (AI-made) | which differences are beyond seed noise |
 
-Colour convention used so far: train `#0072B2`, OOD `#D55E00`, val `#009E73`, test `#CC79A7` (colour-blind safe).
+Colour convention: MLP coef `#0072B2`, MLP samples `#56B4E9`, DeepONet coef `#D55E00`, DeepONet samples
+`#E69F00` (colour-blind safe, Okabe-Ito); data figures use train `#0072B2`, OOD `#D55E00`, val `#009E73`,
+test `#CC79A7`.
 
-Tables: (a) parameter ranges (README), (b) results (README planned table, extended with p95/max error),
-(c) test report (`pytest --junitxml=results/test_report.xml`), (d) AI-use summary from `AI_LOG.md`.
-
-Final versions of #10 to #13 and #17: `py -3.10 -m scripts.plot_eval <checkpoints> --split test --final` once, after the selection rule in `EXPERIMENTS.md` has fixed the checkpoints. Until then only val figures exist.
+Tables: (a) parameter ranges (README), (b) results (`results/final_eval.md`, `final_analysis.md`),
+(c) test report (`results/test_report.xml`), (d) mutation check (`results/mutation_check.md`), (e) AI-use
+summary from `AI_LOG.md`.
