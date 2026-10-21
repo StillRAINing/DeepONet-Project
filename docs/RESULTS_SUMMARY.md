@@ -13,7 +13,7 @@ Test n = 1500, OOD sets n = 200 each. "3 seeds" = mean +- std over training seed
 1. At equal parameters (171k) and equal tuning, a plain MLP beats the DeepONet in distribution: test median
    0.071 vs 0.109, beyond seed noise (gaps 8 to 12 seed std on validation).
 2. The DeepONet is more physically self-consistent (qdot vs dq/dt 0.10 to 0.15 vs 0.22 to 0.26) and far cheaper
-   per query once its trunk is cached (0.03 ms vs 0.32 ms at batch 64); a consistency penalty gives both
+   per query once its trunk is cached (0.02 ms vs 0.27 ms at batch 64); a consistency penalty gives both
    families consistency without costing accuracy.
 3. Every model fails on the same 5 to 10 % of trajectories, where the elbow spins: p95 0.60 to 0.65, close to
    the "predict the mean trajectory" baseline (0.87). The true map is itself highly sensitive there (a 1 %
@@ -21,8 +21,8 @@ Test n = 1500, OOD sets n = 200 each. "3 seeds" = mean +- std over training seed
 4. Out of range: torque amplitude beyond 6 N m breaks every model (median 0.53 to 0.62, then saturating);
    heavier payload and friction are a mild shift; a rougher torque family is handled better when the torque
    is given as samples than as coefficients (the one place the "function input" pays off).
-5. The surrogate pays for its training after about 60k to 130k queries against `solve_ivp`, but only after
-   about 0.6 to 1.4 million against an exact, batched NumPy RK4, which is the honest rival.
+5. The surrogate pays for its training after about 70k to 205k queries against `solve_ivp`, but only after
+   about 0.8 to 3.0 million against an exact, batched NumPy RK4, which is the honest rival (B2 quiet rerun).
 
 ## 1. Engineering problem
 
@@ -102,10 +102,10 @@ data split.
 | Consistency penalty: consistency 0.071 -> 0.008 (DeepONet), 0.30 -> 0.12 (MLP), no accuracy cost | | same |
 | Best configuration found: MLP, samples, ff6 + cons | test median 0.066 +- 0.002 | `results/final_eval_ff6cons.md` |
 | More data helps the median as ~n^-0.5, the tail much less | | `results/e4_datasize.png` |
-| Speed: surrogates 0.2 to 0.4 ms / traj (batch 64), DeepONet cached 0.03 ms; vectorised RK4 8.7 ms (1.5 ms at batch 1500); `solve_ivp` at matched error ~14 ms and fails at loose rtol | | `results/benchmark.md`, `results/bench_pareto.png`, `bench_batch.png` |
-| Profile: the scalar solver spends its time in Python calls to `state_derivative` (4800 per trajectory) -> vectorising RK4 over the batch gives a 30x speed-up with identical labels | 266 ms -> 8.7 ms | `results/benchmark.md` (cProfile section) |
+| Speed (B2 quiet rerun): surrogates 0.14 to 0.28 ms / traj (batch 64), DeepONet cached 0.02 ms; vectorised RK4 4.4 ms (0.73 ms at batch 1500); `solve_ivp` at matched error ~7.5 to 8 ms and fails at loose rtol | | `results/benchmark.md`, `results/bench_pareto.png`, `bench_batch.png` |
+| Profile: the scalar solver spends its time in Python calls to `state_derivative` (4800 per trajectory) -> vectorising RK4 over the batch gives a 27x speed-up with identical labels | 121 ms -> 4.4 ms | `results/benchmark.md` (cProfile section) |
 | FLOPs per trajectory: MLP 5.2e7, DeepONet 2.0 to 2.5e7, cached 2.6e5 to 2.9e5; parameters 0.69 MB | | `results/benchmark.md` |
-| Break-even incl. data + training | 57k to 128k vs `solve_ivp`; 0.56M to 1.4M vs batched RK4; ~5x more with the lr grid | `results/final_analysis.md` "Speed", `results/bench_breakeven.png` |
+| Break-even incl. data + training | 70k to 205k vs `solve_ivp`; 0.8M to 3.0M vs batched RK4; ~5x more with the lr grid | `results/final_analysis.md` "Speed", `results/bench_breakeven.png` |
 
 ## 6. Limitations and lessons learned
 

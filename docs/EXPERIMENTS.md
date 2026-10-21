@@ -407,6 +407,36 @@ Observations:
 Run events: first rerun crashed in the CSV writer after measuring (fixed, rerun); the earlier
 2026-10-14 run was contended at 100 % CPU and is superseded.
 
+## B2. Speed benchmark, quiet rerun (2026-10-21 16:29 to 16:31, AI-run, `py -3.10 -m scripts.run_benchmark`)
+
+Supersedes B1 (student's decision 2026-10-21: rerun before quoting milliseconds). Conditions: IDE open, every
+other desktop program closed; system CPU outside the process 20 % before, 14 % after (B1: 30 to 35 %). Same code,
+same checkpoints, same 64 validation trajectories, so errors are identical to B1; only times changed. Snapshot of
+the B1 files is in commit a7f41b7. `scripts/final_analysis.py` rerun afterwards to redraw `bench_*.png` and the
+break-even table (its "Reading" sentence was hardcoded to the B1 ranges; now computed from the data).
+
+| Method (64 val trajectories) | ms / traj (B2) | B1 for comparison |
+|---|---|---|
+| scalar Python RK4 (made the labels), one at a time | 121 | 266 |
+| vectorised NumPy RK4, batch 64 / batch 1500 | 4.4 / 0.73 | 8.7 / 1.48 |
+| `solve_ivp` RK45 rtol 0.03 / 0.05 (matched to surrogate median) | 7.6 / 8.1 | 14.0 / 14.5 |
+| MLP coef / samples, batch 64 | 0.27 / 0.28 | 0.37 / 0.32 |
+| DeepONet coef / samples, batch 64 | 0.18 / 0.14 | 0.23 / 0.21 |
+| DeepONet, trunk cached, batch 64 (default threads / 1 thread) | 0.02 / 0.007 | 0.03 / - |
+
+Observations:
+1. Everything got faster, but the **solvers about 2x and the surrogates only 1.2 to 1.5x**, so the background load
+   in B1 had flattered the surrogates. The speed-ups and break-even numbers move against the surrogates.
+2. Speed-up vs vectorised RK4 (un-cached surrogates): 137 to 161x at batch 1, 17 to 35x at batch 64, 3 to 7x at
+   batch 1500. DeepONet with cached trunk: 201 to 359x at every batch.
+3. Training (idle, scaled from 3 epochs): 556 to 1490 s per run; data generation 8 s vectorised (1,206 s scalar).
+   Break-even: **70k to 205k** queries vs matched `solve_ivp`; **0.8M to 3.0M** vs batched RK4 at batch 1500
+   (3.8M to 14.9M with the 5-run lr grid). B1 had 57k to 128k and 0.56M to 1.4M.
+4. FLOPs and memory unchanged (they are not timings).
+
+Caveat that still applies: one laptop, one run; repeated runs on this machine differ by ~10 to 20 %. B1 vs B2
+differ by ~2x, which is the background load, not noise.
+
 ## E5. Final analysis of the selected models (2026-10-15, AI-run, `py -3.10 -m scripts.final_analysis`)
 
 After the selection rule; nothing chosen here. Tables: `results/final_analysis.md`. Figures:

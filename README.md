@@ -209,11 +209,12 @@ The best configuration found is the MLP with samples input, Fourier features and
 0.066 +- 0.002). Median error falls about as n^-0.5 with training-set size; the p95 much more slowly.
 
 Speed (`results/benchmark.md`, 64 validation trajectories): vectorised NumPy RK4 gives the exact labels in
-8.7 ms per trajectory at batch 64 (1.5 ms at batch 1500); `solve_ivp` at the surrogates' error level needs
-about 14 ms and fails on some trajectories at rtol 0.08 to 0.1. The surrogates cost 0.2 to 0.4 ms at
-batch 64; a DeepONet with its trunk cached on the fixed time grid costs 0.03 ms, which the MLP cannot copy.
-Including data generation (17 s vectorised) and one training run (800 to 1700 s), the surrogates pay off
-after about 57,000 to 128,000 queries against `solve_ivp`, and 0.56 to 1.4 million against batched RK4.
+4.4 ms per trajectory at batch 64 (0.73 ms at batch 1500); `solve_ivp` at the surrogates' error level needs
+about 7.5 to 8 ms and fails on some trajectories at rtol 0.08 to 0.1. The surrogates cost 0.14 to 0.28 ms at
+batch 64; a DeepONet with its trunk cached on the fixed time grid costs about 0.02 ms, which the MLP cannot copy.
+Including data generation (8 s vectorised) and one training run (560 to 1500 s), the surrogates pay off
+after about 70,000 to 205,000 queries against `solve_ivp`, and 0.8 to 3.0 million against batched RK4
+(EXPERIMENTS B2, quiet rerun 2026-10-21).
 
 ## Limitations
 

@@ -620,6 +620,7 @@ def fig_bench(L):
           "idle, data generated with vectorised RK4:", "",
           f"| model | surrogate ms / traj at batch {big} (variant) | N* vs matched solve_ivp | N* vs RK4 at batch {big}, 1 training run | "
           f"same, incl. the 5-run lr grid |", "|---|---|---|---|---|"]
+    n1s, n5s, sur_big = [], [], {}
     for r in rows:
         key = f"{r['model']}/{r['input']}"
         variant = min(B["sweeps"][key], key=lambda v: B["sweeps"][key][v][str(big)])
@@ -628,10 +629,19 @@ def fig_bench(L):
         n5 = bm.break_even_queries(meta["t_gen_vec_s"], 5 * r["train_s_idle"], rk4_big / 1e3, sur / 1e3)
         L.append(f"| {colours[key][0]} | {sur:.3f} ({'trunk cached' if variant == 'cached' else 'full'}) | "
                  f"{r['N_ivp_vec_one']:,.0f} | {n1:,.0f} | {n5:,.0f} |")
-    L += ["", "Reading: against `solve_ivp` the surrogates pay off after roughly 60,000 to 130,000 queries; against an exact, "
-          "batched RK4 after roughly 0.5 to 1.5 million (2 to 7 million with the tuning grid), because RK4 itself becomes "
+        n1s.append(n1); n5s.append(n5); sur_big[key] = sur
+    ivp_ns = [r["N_ivp_vec_one"] for r in rows]
+    mlp64 = min(r["ms_b64_best"] for r in rows if r["model"] == "mlp")
+    don64 = min(r["ms_b64_best"] for r in rows if r["model"] == "deeponet")
+    mlp_big = min(v for k, v in sur_big.items() if k.startswith("mlp"))
+    don_big = min(v for k, v in sur_big.items() if k.startswith("deeponet"))
+    L += ["", f"Reading: against `solve_ivp` the surrogates pay off after roughly {min(ivp_ns):,.0f} to {max(ivp_ns):,.0f} "
+          f"queries; against an exact, batched RK4 after roughly {min(n1s) / 1e6:.1f} to {max(n1s) / 1e6:.1f} million "
+          f"({min(n5s) / 1e6:.1f} to {max(n5s) / 1e6:.1f} million with the tuning grid), because RK4 itself becomes "
           "cheap in large batches. Training dominates the fixed cost (data generation with vectorised RK4 takes about "
-          f"{meta['t_gen_vec_s']:.0f} s). The DeepONet's cached trunk makes it the cheapest per query (about 11x below the MLPs at batch 64, about 70x at batch 1500), a real "
+          f"{meta['t_gen_vec_s']:.0f} s). The DeepONet's cached trunk makes it the cheapest per query (about "
+          f"{mlp64 / don64:.0f}x below the MLPs at batch 64 with each model in its fastest thread setting, about "
+          f"{mlp_big / don_big:.0f}x at batch {big} with default threads), a real "
           "architectural advantage that the MLP cannot copy; it does not make it more accurate.", ""]
     ax.set_xlabel("number of trajectories queried")
     ax.set_ylabel("total wall-clock seconds")

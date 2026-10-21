@@ -168,14 +168,14 @@ Seed noise on val loss for this model is about 0.003 (3 seeds at p = 64), so onl
 
 ## Speed: the fair rival and the break-even
 
-Vectorised RK4 (exact labels) costs 8.7 ms per trajectory at batch 64 and 1.48 ms at batch 1500, while `solve_ivp` at the surrogates' error level costs 13.7 ms (one trajectory at a time) and fails outright on 1 to 2 of 64 trajectories at rtol 0.08 to 0.1. So for batched queries the strongest classical rival is batched RK4, which is also exact. Break-even N* = (data + training) / (rival - surrogate), training measured idle, data generated with vectorised RK4:
+Vectorised RK4 (exact labels) costs 4.4 ms per trajectory at batch 64 and 0.73 ms at batch 1500, while `solve_ivp` at the surrogates' error level costs 7.4 ms (one trajectory at a time) and fails outright on 1 to 2 of 64 trajectories at rtol 0.08 to 0.1. So for batched queries the strongest classical rival is batched RK4, which is also exact. Break-even N* = (data + training) / (rival - surrogate), training measured idle, data generated with vectorised RK4:
 
 | model | surrogate ms / traj at batch 1500 (variant) | N* vs matched solve_ivp | N* vs RK4 at batch 1500, 1 training run | same, incl. the 5-run lr grid |
 |---|---|---|---|---|
-| MLP, coef | 0.272 (full) | 127,684 | 1,443,015 | 7,157,793 |
-| MLP, samples | 0.275 (full) | 94,268 | 1,071,440 | 5,299,806 |
-| DeepONet, coef | 0.004 (trunk cached) | 75,895 | 706,204 | 3,484,189 |
-| DeepONet, samples | 0.004 (trunk cached) | 56,674 | 557,281 | 2,739,552 |
+| MLP, coef | 0.228 (full) | 204,656 | 2,985,586 | 14,860,945 |
+| MLP, samples | 0.209 (full) | 139,033 | 1,952,585 | 9,698,404 |
+| DeepONet, coef | 0.003 (trunk cached) | 93,410 | 949,970 | 4,703,648 |
+| DeepONet, samples | 0.004 (trunk cached) | 69,979 | 777,241 | 3,839,936 |
 
-Reading: against `solve_ivp` the surrogates pay off after roughly 60,000 to 130,000 queries; against an exact, batched RK4 after roughly 0.5 to 1.5 million (2 to 7 million with the tuning grid), because RK4 itself becomes cheap in large batches. Training dominates the fixed cost (data generation with vectorised RK4 takes about 17 s). The DeepONet's cached trunk makes it the cheapest per query (about 11x below the MLPs at batch 64, about 70x at batch 1500), a real architectural advantage that the MLP cannot copy; it does not make it more accurate.
+Reading: against `solve_ivp` the surrogates pay off after roughly 69,979 to 204,656 queries; against an exact, batched RK4 after roughly 0.8 to 3.0 million (3.8 to 14.9 million with the tuning grid), because RK4 itself becomes cheap in large batches. Training dominates the fixed cost (data generation with vectorised RK4 takes about 8 s). The DeepONet's cached trunk makes it the cheapest per query (about 42x below the MLPs at batch 64 with each model in its fastest thread setting, about 84x at batch 1500 with default threads), a real architectural advantage that the MLP cannot copy; it does not make it more accurate.
 
