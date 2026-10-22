@@ -136,7 +136,7 @@ RK45, DOP853); Spong / Siciliano for the 2-link arm equations (whichever textboo
 1. Headline: the rule-selected models (recommended, clean test) or also quote the ff6 + cons MLP as "best
    found" (validation-chosen, but test already seen for it)?
 2. How to frame accuracy (MLP) vs consistency and per-query cost (DeepONet).
-3. Whether to rerun the benchmark with desktop programs closed (3 minutes) before quoting milliseconds.
+3. ~~Whether to rerun the benchmark with desktop programs closed.~~ Resolved 2026-10-21: rerun done (EXPERIMENTS B2); quote the B2 numbers.
 4. Whether to add a phase-coverage test (the one missed mutation; sine family only) or state that the sine
    family is diagnostics only.
 5. The E1 / E2 / E3 / E4 "Decision: [fill in]" lines in `docs/EXPERIMENTS.md`.

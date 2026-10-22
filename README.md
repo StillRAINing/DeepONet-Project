@@ -32,10 +32,10 @@ Work in progress (final report due Fri 23 Oct 2026). `AI_LOG.md` is the running 
 - [x] DeepONet + MLP baselines (same parameter budget, same tuning protocol)
 - [x] Evaluation: validation, test and four out-of-range sets, per-channel / per-time errors
 - [x] Input validation (`src/validate.py`, `src/surrogate.py`)
-- [x] Benchmark (`results/benchmark.md`, 2026-10-15): no other jobs running; 30 to 35 % background desktop load
+- [x] Benchmark (`results/benchmark.md`, 2026-10-21, EXPERIMENTS B2): quiet rerun with desktop programs closed
 - [x] Fair-fight follow-ups (E4): Fourier time features, consistency penalty, data size, basis size p
 - [x] Final analysis and every report figure (`results/final_analysis.md`, `docs/FIGURE_PLAN.md`)
-- [x] Test report (`results/test_report.xml`, 115 tests), mutation check (`results/mutation_check.md`),
+- [x] Test report (`results/test_report.xml`, 117 tests), mutation check (`results/mutation_check.md`),
       HTML documentation (`docs/html/`)
 - [ ] Written report and AI-use reflection
 
@@ -171,7 +171,7 @@ python -m scripts.run_benchmark             # speed / memory / FLOPs / break-eve
 python -m scripts.final_analysis            # every remaining report figure and table -> results/final_analysis.md
 python -m scripts.solver_figures            # RK4 convergence, energy, labels vs DOP853 -> results/solver_checks.md
 python -m scripts.mutation_check            # do the tests catch deliberate bugs? -> results/mutation_check.md
-python -m scripts.plot_training             # loss curves -> results/loss_*.png
+python -m scripts.plot_training             # loss curves -> results/training_curves/loss_*.png
 python -m scripts.plot_eval checkpoints/<a>.pt [<b>.pt ...]   # evaluation figures on val
 python -m scripts.truth_check               # accuracy of the stored RK4 labels on every split
 python -m scripts.data_stats                # dataset statistics (per-channel scales, wrapping)
