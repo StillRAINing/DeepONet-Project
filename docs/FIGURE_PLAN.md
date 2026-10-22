@@ -18,7 +18,7 @@ Status updated 2026-10-15: every figure exists. "AI-made" means the plotting cod
 | 6 | Channel histograms | Justify per-channel normalisation | `results/data_channel_hist.png` | done | heavy tails, units differ |
 | 7 | Parameter coverage of the splits | Define OOD | `results/data_param_coverage.png` | done | what OOD does and does not test |
 | 8 | Peak `|q2|` vs `A2` and `b` | Show regime switching / hard cases | `results/data_peak_vs_inputs.png` | done (sine family; still valid as motivation) | bimodality (`REVIEW_NOTES` 2.5) |
-| 9 | Training and validation loss curves | Convergence and overfitting | `results/loss_by_model.png`, `results/loss_<run>.png` | done | where train and val diverge, what you selected on |
+| 9 | Training and validation loss curves | Convergence and overfitting | `results/training_curves/loss_by_model.png`, `results/training_curves/loss_<run>.png` | done | where train and val diverge, what you selected on |
 | 10 | Best / median / worst test cases, all four channels | Make accuracy tangible | `results/evalfig_test_final4_cases.png` (MLP coef; also `_ood_amp1_`, `_ood_smooth_`) | done | why the worst case fails (elbow flip predicted wrongly) |
 | 11 | Error vs time, per channel, with percentile band | Where it goes wrong | `results/evalfig_test_final4_time.png` | done | definition (divided by the whole-trajectory rms), why it grows |
 | 12 | Error CDF over test (and OOD) | Spread, not just mean | `results/evalfig_test_final4_cdf.png`, `_ood_amp1_`, `_ood_smooth_` | done | which fraction exceeds a tolerance |

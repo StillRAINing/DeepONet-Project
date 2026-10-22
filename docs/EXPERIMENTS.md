@@ -206,9 +206,9 @@ Interim (AI note, 15:35, one run only, unseeded init, NOT a result): DeepONet wi
 lr 1e-3 constant: val loss 0.2134 at epoch 176, median 0.124, p95 0.685 (reference DeepONet with
 304 samples: 0.2178, 0.134, 0.645). Its
 train loss is the lowest of all runs so far (~0.155 at epoch 200), so its train/val gap is the largest
-(`results/loss_all_runs.png`). MLP with 304-sample input, lr 1e-3 (seeded init, finished 15:50): val loss
+(`results/training_curves/loss_all_runs.png`). MLP with 304-sample input, lr 1e-3 (seeded init, finished 15:50): val loss
 0.1952 at epoch 169, median 0.107, p95 0.640, under 10 % 47.7 %: better than every DeepONet run so
-far on all of these (`runs.csv`, `results/loss_by_model.png`). But its qdot vs dq/dt consistency is
+far on all of these (`runs.csv`, `results/training_curves/loss_by_model.png`). But its qdot vs dq/dt consistency is
 the worst (0.241 vs 0.110 to 0.27 for the DeepONets), so 'more accurate' and 'more physical' may disagree.
 CLAUDE.md weak point 2 anticipated this; if it holds over the grid and the seeds, it is a legitimate
 headline result. Wait for the full grid and the seeds before reading anything into it.

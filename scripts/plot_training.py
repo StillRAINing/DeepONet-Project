@@ -7,8 +7,8 @@ Sources:
   * checkpoints/*.pt  -> the full ``hist`` saved by ``fit`` (finished runs).
   * logs/*.log        -> lines "epoch N  train a  val b ..." printed by ``fit`` (runs still going).
 If a log and a checkpoint describe the same run, the checkpoint wins (it is complete).
-Output: results/loss_<run>.png for each run, results/loss_all_runs.png overlaying them, and
-results/loss_by_model.png (one panel per model and input; readable when there are many runs).
+Output: results/training_curves/loss_<run>.png for each run, results/training_curves/loss_all_runs.png overlaying them,
+and results/training_curves/loss_by_model.png (one panel per model and input; readable when there are many runs).
 The loss is the channel-normalised relative L2 from ``relative_l2_loss`` (lower is better).
 """
 import re
@@ -22,6 +22,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "results"
+CURVES = RESULTS / "training_curves"
 TRAIN_C, VAL_C = "#0072B2", "#009E73"   # colours from docs/FIGURE_PLAN.md
 
 LINE = re.compile(r"epoch\s+(\d+)\s+train\s+([\d.eE+-]+)\s+val\s+([\d.eE+-]+)")
@@ -62,7 +63,7 @@ def plot_run(name: str, run: dict, ax=None, solo=True):
     ax.legend()
     if solo:
         fig.tight_layout()
-        out = RESULTS / f"loss_{name}.png"
+        out = CURVES / f"loss_{name}.png"
         fig.savefig(out, dpi=150)
         plt.close(fig)
         print("saved", out.relative_to(ROOT))
@@ -96,7 +97,7 @@ def plot_by_model(runs: dict) -> None:
     axes[0, 0].set_ylabel("validation loss (relative L2, normalised)")
     fig.suptitle("Validation loss by model (solid = constant lr, dashed = cosine)", fontsize=11)
     fig.tight_layout()
-    out = RESULTS / "loss_by_model.png"
+    out = CURVES / "loss_by_model.png"
     fig.savefig(out, dpi=150)
     plt.close(fig)
     print("saved", out.relative_to(ROOT))
@@ -122,7 +123,7 @@ def main():
                     print("skipped:", e)
     if not runs:
         sys.exit("no runs found")
-    RESULTS.mkdir(exist_ok=True)
+    CURVES.mkdir(parents=True, exist_ok=True)
     for name, run in runs.items():
         plot_run(name, run)
     if len(runs) > 1:
@@ -137,7 +138,7 @@ def main():
         ax.set_title("All runs (solid = val, dashed = train)", fontsize=10)
         ax.grid(alpha=0.3, which="both"); ax.legend(fontsize=7)
         fig.tight_layout()
-        out = RESULTS / "loss_all_runs.png"
+        out = CURVES / "loss_all_runs.png"
         fig.savefig(out, dpi=150)
         plt.close(fig)
         print("saved", out.relative_to(ROOT))
