@@ -13,3 +13,7 @@ logs/
 # IDE settings and course material (local only)
 .vscode/
 MMA3001 Workshop*.pdf
+
+# Report drafts (local only; back up outside git)
+report/*.docx
+~$*
