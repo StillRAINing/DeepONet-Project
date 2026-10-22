@@ -112,6 +112,12 @@
                     <a class="class" href="#App">App</a>
                             <ul class="memberlist">
                         <li>
+                                <a class="function" href="#App.__init__">App</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#App.family">family</a>
+                        </li>
+                        <li>
                                 <a class="variable" href="#App.screen">screen</a>
                         </li>
                         <li>
@@ -172,10 +178,16 @@
                                 <a class="function" href="#App.draw_arm_panel">draw_arm_panel</a>
                         </li>
                         <li>
+                                <a class="function" href="#App.rel_l2">rel_l2</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#App.in_range">in_range</a>
                         </li>
                         <li>
                                 <a class="function" href="#App.arm_sets">arm_sets</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#App.draw_plot_legend">draw_plot_legend</a>
                         </li>
                         <li>
                                 <a class="function" href="#App.draw_panels">draw_panels</a>
@@ -382,7 +394,7 @@ traces once registered.</p>
                 <section id="SUR_COLORS">
                     <div class="attr variable">
             <span class="name">SUR_COLORS</span>        =
-<span class="default_value">[(210, 130, 255), (255, 160, 90), (130, 255, 230)]</span>
+<span class="default_value">[(210, 130, 255), (255, 160, 90), (130, 255, 230), (255, 110, 200)]</span>
 
         
     </div>
@@ -492,7 +504,10 @@ traces once registered.</p>
     </div>
     <a class="headerlink" href="#draw_plot"></a>
     
-            <div class="docstring"><p>Draw line series [(label, color, y_array)] against t with a time cursor.</p>
+            <div class="docstring"><p>Draw line series [(label, color, y_array, width)] against t with a time cursor.</p>
+
+<p>Series with <code>label=None</code> are drawn but left out of the in-panel legend (the network and RK45
+traces, which are named once in the shared legend above the plots instead).</p>
 </div>
 
 
@@ -572,9 +587,37 @@ traces once registered.</p>
 <p>The RK4 ground truth is always shown; RK45 and any registered surrogates are overlaid.
 Keys: space pause, [ ] speed, R restart, G passive ghost, K RK45 overlay, N / O random test /
 out-of-range sample, D defaults, P screenshot.</p>
+
+<p><code>family="sinusoid"</code> (default) has the sliders <code>A, f, phi</code> per joint (the original torque
+family). <code>family="smooth"</code> is the family the surrogates were trained on: a random smooth
+torque (2 x 2 x K Fourier coefficients, loaded with N / O), where the A sliders set the peak
+torque of each joint and the shape is kept fixed.</p>
 </div>
 
 
+                            <div id="App.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">App</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">family</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;sinusoid&#39;</span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#App.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="App.family" class="classattr">
+                                <div class="attr variable">
+            <span class="name">family</span>
+
+        
+    </div>
+    <a class="headerlink" href="#App.family"></a>
+    
+    
+
+                            </div>
                             <div id="App.screen" class="classattr">
                                 <div class="attr variable">
             <span class="name">screen</span>
@@ -717,7 +760,10 @@ out-of-range sample, D defaults, P screenshot.</p>
     </div>
     <a class="headerlink" href="#App.inputs"></a>
     
-            <div class="docstring"><p>Current slider values as <code>(params (2,), coef (2, 3))</code> = <code>[m_p, b]</code> and <code>[A, f, phi]</code> per joint.</p>
+            <div class="docstring"><p>Current slider values as <code>(params (2,), coef)</code>.</p>
+
+<p><code>coef</code> is (2, 3) = <code>[A, f, phi]</code> per joint (sinusoid family) or (2, 2, K) Fourier
+coefficients (smooth family: the stored unit-peak shape times the A sliders).</p>
 </div>
 
 
@@ -827,6 +873,21 @@ out-of-range sample, D defaults, P screenshot.</p>
 
 
                             </div>
+                            <div id="App.rel_l2" class="classattr">
+                                <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">rel_l2</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">traj</span></span><span class="return-annotation">):</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#App.rel_l2"></a>
+    
+            <div class="docstring"><p>Relative L2 error of <code>traj</code> against RK4 over the whole trajectory, all four channels together.</p>
+</div>
+
+
+                            </div>
                             <div id="App.in_range" class="classattr">
                                 <div class="attr function">
             
@@ -853,6 +914,21 @@ out-of-range sample, D defaults, P screenshot.</p>
     <a class="headerlink" href="#App.arm_sets"></a>
     
             <div class="docstring"><p>List of <code>(name, trajectory, colour)</code> to draw: RK4, optional RK45, then each surrogate.</p>
+</div>
+
+
+                            </div>
+                            <div id="App.draw_plot_legend" class="classattr">
+                                <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">draw_plot_legend</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">rect</span></span><span class="return-annotation">):</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#App.draw_plot_legend"></a>
+    
+            <div class="docstring"><p>Shared legend for the three plots: thick lines are RK4, thin lines the overlays (wraps to new rows).</p>
 </div>
 
 
