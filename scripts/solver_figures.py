@@ -93,7 +93,7 @@ def convergence(d, lines):
     for a in ax:
         a.grid(alpha=0.25, which="both")
         a.legend(frameon=False, fontsize=8)
-    fig.suptitle("#2  RK4 global error: slope 4 (16x per halving) once h is in the asymptotic range")
+    fig.suptitle("RK4 global error: slope 4 (16x per halving) once h is in the asymptotic range")
     fig.tight_layout()
     fig.savefig(RESULTS / "solver_convergence.png", dpi=150)
     plt.close(fig)
@@ -160,13 +160,13 @@ def energy_checks(d, lines):
     ax[1].set_title(f"(b) balance on test sample #{i} (b = {pb.b:.2f}, m_p = {pb.m_p:.2f})")
     h1, l1 = ax[1].get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
-    ax[1].legend(h1 + h2, l1 + l2, frameon=False, fontsize=7, loc="upper left")
+    ax[1].legend(h1 + h2, l1 + l2, frameon=False, fontsize=7, ncol=2, loc="upper center", bbox_to_anchor=(0.5, -0.13))
     for a in ax:
         a.grid(alpha=0.25, which="both")
     ax[0].legend(frameon=False, fontsize=8)
-    fig.suptitle("#3  Raw energy is conserved only without torque and friction; with them the BALANCE dE/dt = tau.qdot - b|qdot|^2 holds")
+    fig.suptitle("Raw energy is conserved only without torque and friction; with them the BALANCE dE/dt = tau.qdot - b|qdot|^2 holds")
     fig.tight_layout()
-    fig.savefig(RESULTS / "solver_energy.png", dpi=150)
+    fig.savefig(RESULTS / "solver_energy.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
     lines += [f"(b) test sample #{i}: energy swing {np.ptp(E):.2f} J; max |balance residual| {np.abs(res_fine).max():.1e} J "
               f"with the trapezoid rule on the 2.5 ms step, {np.abs(res_grid).max():.1e} J on the 20 ms output grid. The second "
@@ -201,7 +201,7 @@ def label_accuracy(d, lines):
         lines.append(f"| {split} #{i} ({name}) | {pk:.1f} | {rel:.1e} | " + ", ".join(f"{x:.1e}" for x in err.max(0)) + " |")
     ax[0].set_ylabel("|label - DOP853| (rad or rad/s)")
     ax[0].legend(frameon=False, fontsize=8)
-    fig.suptitle("#4  Label error (RK4, h = 2.5 ms) vs a tight DOP853 reference: tiny when calm, grows on spinning trajectories, "
+    fig.suptitle("Label error (RK4, h = 2.5 ms) vs a tight DOP853 reference: tiny when calm, grows on spinning trajectories, "
                  "below every surrogate error on the same set")
     fig.tight_layout()
     fig.savefig(RESULTS / "solver_vs_dop853.png", dpi=150)

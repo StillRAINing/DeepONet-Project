@@ -183,7 +183,7 @@ def fig_seeds(variants, L):
         a.set_ylabel(f"test {key} relative L2")
         a.set_title(f"test {key}: one dot per training seed, line = mean")
         style(a)
-    fig.suptitle("#18  Seed-to-seed spread (filled = rule-selected setting, hollow = E4 variants)")
+    fig.suptitle("Seed-to-seed spread (filled = rule-selected setting, hollow = E4 variants)")
     save(fig, "final_seeds.png")
 
 
@@ -230,7 +230,7 @@ def fig_e4(agg_rows, runs, L):
         a.set_title(f"validation {title}")
         style(a)
     ax[3].set_yscale("log")
-    fig.suptitle("E4  Equal-effort improvements, available to both families (validation, n = 1500)")
+    fig.suptitle("Equal-effort improvements, available to both families (validation, n = 1500)")
     save(fig, "e4_variants.png")
     L.append("")
 
@@ -261,7 +261,7 @@ def fig_datasize(runs, L):
         a.legend(frameon=False, fontsize=8)
     ax[0].set_title("median: falls ~4x from 500 to 7000, still falling")
     ax[1].set_title("p95: falls far more slowly (the spinning tail)")
-    fig.suptitle("E4  Learning curve: each model at its own lr 1e-3 cosine setting, one seed")
+    fig.suptitle("Learning curve: each model at its own lr 1e-3 cosine setting, one seed")
     save(fig, "e4_datasize.png")
     L += ["", "p95 at the same n: " + "; ".join(p95s) + ".", "",
           "The median falls roughly as n^-0.5 with no sign of saturation at 7000, so more data would still help the typical "
@@ -296,7 +296,7 @@ def fig_psweep(runs, L):
         a.set_title(t)
         style(a)
         a.legend(frameon=False, fontsize=8)
-    fig.suptitle("W2  Is p = 64 a sensible choice?  One seed per point: differences under ~0.005 are within seed noise")
+    fig.suptitle("Is p = 64 a sensible choice?  One seed per point: differences under ~0.005 are within seed noise")
     save(fig, "e4_psweep.png")
     L += ["", "Seed noise on val loss for this model is about 0.003 (3 seeds at p = 64), so only p = 8 (and p = 256 at equal "
           "budget, where width falls to 71) are clearly worse; p from 16 to 128 is a plateau. p = 32 has the lowest val loss "
@@ -347,7 +347,7 @@ def fig_consistency(ps, d, L):
     ax[1].set_title(f"(b) test #{i}: the two velocity estimates of one network")
     style(ax[1])
     ax[1].legend(frameon=False, fontsize=6.5)
-    fig.suptitle("#14  Physical consistency is not in the data loss: DeepONets are more self-consistent; a penalty term "
+    fig.suptitle("Physical consistency is not in the data loss: DeepONets are more self-consistent; a penalty term "
                  "(dashed) closes the gap for both")
     save(fig, "final_consistency.png")
     L.append("")
@@ -382,7 +382,7 @@ def fig_ood(ps, d, fe, L):
     ax[0].text(3, 0.012, "training range", ha="center", fontsize=8, color="#006b4f")
     ax[0].set_xlabel("peak |tau| over both joints [N m]  (test, then ood_amp1, ood_amp2)")
     ax[0].set_ylabel("per-sample relative L2  (dotted: p95)")
-    ax[0].set_title("(a) amplitude: error rises inside the range, ~doubles past the edge, then saturates")
+    ax[0].set_title("(a) amplitude: error rises inside the range,\n~doubles past the edge, then saturates", fontsize=10)
     style(ax[0], "y")
     ax[0].legend(frameon=False, fontsize=7)
 
@@ -395,7 +395,7 @@ def fig_ood(ps, d, fe, L):
     ax[1].scatter(pk_ood, ps[f"{tag}|ood|err"], s=12, color="#D55E00", alpha=0.8, lw=0, label="ood (m_p 1-1.5, b 0.5-0.8)")
     ax[1].set_xlabel("peak |q| of the true trajectory [rad]")
     ax[1].set_ylabel("per-sample relative L2")
-    ax[1].set_title(f"(b) {MODELS[tag][0]}: OOD m_p, b errors match in-range errors of the same size")
+    ax[1].set_title(f"(b) {MODELS[tag][0]}: OOD m_p, b errors match\nin-range errors of the same size", fontsize=10)
     style(ax[1], "x")
     ax[1].set_yscale("log")
     ax[1].legend(frameon=False, fontsize=8)
@@ -427,10 +427,10 @@ def fig_ood(ps, d, fe, L):
     ax[2].plot([], [], color="#222222", ls=":", label="same model on test")
     ax[2].set_xticks(x, ["MLP", "DeepONet"])
     ax[2].set_ylabel("ood_smooth median relative L2 (3 seeds)")
-    ax[2].set_title("(c) rougher torque (13 modes): sampled input generalises better")
+    ax[2].set_title("(c) rougher torque (13 modes):\nsampled input generalises better", fontsize=10)
     style(ax[2])
     ax[2].legend(frameon=False, fontsize=8)
-    fig.suptitle("#15  Out of range is a degradation curve, not a pass / fail")
+    fig.suptitle("Out of range is a degradation curve, not a pass / fail")
     save(fig, "final_ood_degradation.png")
 
 
@@ -549,8 +549,9 @@ def fig_bench(L):
     ax.plot(ms, [v["median_err"] for v in ok.values()], "o-", color="#555555", lw=1.5, label="solve_ivp RK45: median")
     ax.plot(ms, [v["p95_err"] if np.isfinite(v["p95_err"]) else np.nan for v in ok.values()], "o:", color="#555555",
             mfc="none", lw=1, label="solve_ivp RK45: p95")
-    for k, v in ok.items():
-        ax.annotate(f"rtol {k}", (v["ms"], v["median_err"]), fontsize=6.5, xytext=(4, -9), textcoords="offset points")
+    for k, v in ok.items():   # label every other tolerance: the loose ones sit within ~1 ms of each other
+        if float(k) in (0.1, 0.06, 0.03, 0.01, 1e-3, 1e-4, 1e-6):
+            ax.annotate(f"rtol {k}", (v["ms"], v["median_err"]), fontsize=6.5, xytext=(7, -3), textcoords="offset points")
     for r in rows:
         label, _, c, m = colours[f"{r['model']}/{r['input']}"]
         ax.plot(r["ms_b64_best"], r["median_err"], marker=m, color=c, ms=9, ls="none", label=f"{label}: median")
@@ -570,7 +571,7 @@ def fig_bench(L):
     ax.set_yscale("log")
     ax.set_xlabel("milliseconds per trajectory (surrogates: batch 64, fastest variant; solve_ivp: one at a time)")
     ax.set_ylabel("relative L2 vs stored truth (filled: median, hollow: p95)")
-    ax.set_title("#16  Accuracy vs cost on 64 validation trajectories")
+    ax.set_title("Accuracy vs cost on 64 validation trajectories")
     ax.legend(frameon=False, fontsize=7, loc="lower left")
     save(fig, "bench_pareto.png")
 

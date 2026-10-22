@@ -36,16 +36,17 @@ Colour convention: MLP coef `#0072B2`, MLP samples `#56B4E9`, DeepONet coef `#D5
 `#E69F00` (colour-blind safe, Okabe-Ito); data figures use train `#0072B2`, OOD `#D55E00`, val `#009E73`,
 test `#CC79A7`.
 
-## Known figure defects (found 2026-10-22, AI_LOG row 45; not yet fixed)
+## Figure defects found 2026-10-22 (AI_LOG row 45), fixed the same evening (AI_LOG row 54)
 
-| Figure | Problem | Fix |
+| Figure | Problem | Fix applied |
 |---|---|---|
-| `final_ood_degradation.png` (#15) | panel titles (a) and (b) run into each other | shorten the titles in `scripts/final_analysis.py` (line ~433 onwards) or wrap them, then rerun `python -m scripts.final_analysis` |
-| `bench_pareto.png` (#16) | the `rtol 0.03 / 0.04 / 0.05 / 0.06` labels overlap | label only a few tolerances, or offset the labels |
-| #2, #3, #4, #14, #15, #16, #18 | titles start with this plan's numbers ("#15 ...") and some are full sentences | drop the "#n" prefix and keep the claim for the caption, or crop in the report |
+| `final_ood_degradation.png` (#15) | panel titles (a) and (b) ran into each other | titles wrapped onto two lines, font 10 |
+| `bench_pareto.png` (#16) | the `rtol 0.03 / 0.04 / 0.05 / 0.06` labels overlapped | only 0.1, 0.06, 0.03, 0.01, 1e-3, 1e-4, 1e-6 labelled, offset to the right |
+| `solver_energy.png` (#3) | panel (b) legend sat on the curves | legend moved below the panel |
+| #2, #3, #4, #14, #15, #16, #18, E4, W2 figures | titles started with this plan's numbers ("#15 ...") | prefix dropped; the claim sentences are kept (crop or shorten in the report if wanted) |
 
-Rerunning `scripts/final_analysis.py` rewrites `results/final_analysis.md` and the figures from the same
-checkpoints, so the numbers do not change; check the diff of the `.md` afterwards to confirm.
+Both scripts were rerun (`final_analysis` from its cache); `results/final_analysis.md` is byte-identical and
+`results/solver_checks.md` changed only in line endings, so no number moved.
 
 Tables: (a) parameter ranges (README), (b) results (`results/final_eval.md`, `final_analysis.md`),
 (c) test report (`results/test_report.xml`), (d) mutation check (`results/mutation_check.md`), (e) AI-use
