@@ -1,41 +1,57 @@
-# Start here (written 2026-10-12 while you napped)
+# Start here (updated 2026-10-22, the day before the report is due)
 
-Nothing was committed. No crucial code (`dynamics.py`, `solvers.py`, `model.py` bodies, train, evaluate) was changed.
-The only edit to your source files: a stale comment in `src/data.py` (gravity torque ~15-24 N m, not ~12).
+The earlier version of this page (2026-10-12) described the sine-family dataset and work that has
+since been done. It is in git history (commit `1aee834`) if you need it.
 
-## The three things that matter most
-1. **Dataset regime** (`REVIEW_NOTES.md` section 2). With `A` up to 15 N m: 72% of trajectories spin past 2 pi
-   (q2 up to 131 rad), the RK4 truth is unconverged on the worst ones (up to 13% error), the OOD set is calmer
-   than train, and peak `|q2|` is bimodal. A per-joint cap such as `(A1, A2) = (8, 2)` looks far saner. Decide, then
-   regenerate (`python -m src.data`).
-2. **Your tests miss real bugs** (section 1). Parallel-axis terms, RK4 order and the phase range can be broken
-   without any test failing. Skeleton tests (skipped) are waiting in `tests/test_solvers.py`,
-   `tests/test_dynamics.py`, `tests/test_model.py`: write them.
-3. **The speed claim depends on batch size** (section 5): ~850x vs the scalar loop, but ~12-35x vs vectorised RK4.
+## Where the project is
 
-## What I added (all logged in `AI_LOG.md` rows 8-12; fill in "Checked how" / "My decision")
-| Path | What |
+Every experiment, figure, benchmark and test is finished. What is left is yours:
+
+1. **The written report** (due Fri 23 Oct 2026). Draft scaffold: `report/MMA3001_Report_DRAFT.docx`
+   (facts, numbers, figure placements filled in; every justification, decision, lesson and the AI
+   reflection left as "YOU WRITE" prompts).
+2. **The open "[fill in]" items** that the report depends on (list below).
+3. **Interview readiness**: explain every crucial function and every figure without help.
+
+## Reading order
+
+| # | Read | Why |
+|---|---|---|
+| 1 | `docs/PROJECT_OVERVIEW.md` | the whole project, every result and number, in one place |
+| 2 | `docs/RESULTS_SUMMARY.md` | claim -> number -> file -> figure, per report section; decisions still yours |
+| 3 | `docs/STUDY_GUIDE.md` | questions you must answer unaided (no answers given) |
+| 4 | `docs/FIGURE_PLAN.md` | every report figure and what you must be able to say about it |
+| 5 | `docs/EXPERIMENTS.md` | the full record of what was run (detail behind the numbers) |
+| 6 | `docs/DESIGN_LOG.md` | why each design choice was made; your "My own words" cells |
+| 7 | `AI_LOG.md` | the AI-use record for the reflection section |
+
+## Status of every doc
+
+| Doc | Status |
 |---|---|
-| `docs/REVIEW_NOTES.md` | audit findings with numbers |
-| `docs/STUDY_GUIDE.md` | questions and hint ladders for every crucial module (no solutions) |
-| `docs/FIGURE_PLAN.md` | report figure/table plan with status |
-| `src/benchmark.py`, `tests/test_benchmark.py` | timing scaffolding, vectorised RK4, FLOPs, break-even |
-| `scripts/` | `data_stats`, `data_figures`, `torque_range_sweep`, `input_sensitivity`, `torque_family_prototype` |
-| `tests/` | `test_data`, `test_rk45`, `test_viz`, `test_torque_prototype`, plus skipped skeletons |
-| `.github/workflows/tests.yml` | CI (never run on GitHub yet) |
-| `results/*.png` | dataset figures and the prototype torque family |
+| `PROJECT_OVERVIEW.md` | current (new, 2026-10-22) |
+| `RESULTS_SUMMARY.md`, `FIGURE_PLAN.md`, `EXPERIMENTS.md`, `STUDY_GUIDE.md`, `README.md` | current (checked against the results files 2026-10-22) |
+| `DESIGN_LOG.md` | current for decisions; statuses of W1-W10 updated 2026-10-22; your "My own words" cells still partly blank |
+| `REVIEW_NOTES.md` | **historical**: the 2026-10-12 audit of the old sine-family dataset; a banner at the top says what was resolved |
+| `AI_LOG_PROMPT.md` | in use: another AI session ran its AI-side fixes and the interview pass on 2026-10-22 (AI_LOG rows 46 to 53); delete the file once your "Checked how" / "My decision" cells are filled |
+| `DeepONet_Project_Explained.pdf` | **out of date** (2026-10-12: 2,200 sine-family trajectories, no models or results). Superseded by `PROJECT_OVERVIEW.md`. Do not quote it; delete it or keep it as history |
+| `physics/*.pdf` | still correct for `dynamics.py` (worked examples match the code); reading material, not your own derivation; not logged as AI-made unless you add a row |
+| `html/` | pdoc API docs, regenerated 2026-10-22 with `pdoc src -o docs/html -d google --no-show-source` |
 
-Run tests: `pytest` (36 pass, 13 skipped skeletons when I ran them under Python 3.10 with pytest installed in a scratch
-venv; your conda env should be Python 3.11, which I could not test here).
+## Open items the report depends on (all yours)
 
-## Suggested first 30 minutes
-1. Read `REVIEW_NOTES.md` sections 2.1, 2.2, 2.5 and look at `results/data_peak_vs_inputs.png`.
-2. Write your answer to this, unaided, then show me: *"Why does halving the RK4 step cut the global error by 16x, and why
-   can't I see that from a single run?"* Then write `test_rk4_global_error_order_is_four`.
-3. Decide the `A` caps and `substeps`; update the README table.
+- [ ] Headline: rule-selected four (recommended) vs also quoting the ff6 + cons MLP as "best found" (EXPERIMENTS E4 "Decision").
+- [ ] Framing: MLP accuracy vs DeepONet consistency and cached per-query cost (EXPERIMENTS rule step 3 "Decision").
+- [ ] The "Decision: [fill in]" lines under E1, E2, E3 and the E4 prediction line in `EXPERIMENTS.md`.
+- [ ] Phase-coverage test for the sine family, or state that the sine family is diagnostics only (the one missed mutation).
+- [ ] O5: enforce `x(0) = x0` or report it as a limitation (it is currently reported).
+- [ ] O8: keep the amplitude shells as decided and say they are a regime change (they are currently reported that way).
+- [ ] DESIGN_LOG: "My own words" cells for D10 to D14 and A8; section E checklist.
+- [ ] AI_LOG: "Checked how" and "My decision" columns (rows 1 to 53) and the reflection notes (another AI session was running the `AI_LOG_PROMPT.md` interview pass on 2026-10-22, AI_LOG row 53).
+- [ ] Re-derive `M`, `C`, `G` and the payload terms by hand (AI_LOG item 3). This is the oldest open item.
+- [ ] Fix two figure defects before they go in the report (FIGURE_PLAN, "Known figure defects").
 
-## Things I am not sure about
-- The mechanism behind the bimodal `q2` (my explanation is a hypothesis; check it).
-- Timings are from one noisy run on a 10-thread desktop.
-- The `(8, 2)` recommendation rests on small screens (40-400 samples).
-- I could not run the project's own conda env (no conda on PATH here); I used Python 3.10 with torch 2.5.1.
+## Run things
+
+Tests: `pytest` (117 pass, 0 skipped; `results/test_report.xml`). On this machine only `py -3.10` has torch;
+pytest lives in a scratch venv. Live demo: `python -m src.demo`. Full reproduce list: `README.md`.

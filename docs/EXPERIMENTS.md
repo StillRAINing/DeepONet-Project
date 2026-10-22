@@ -1,7 +1,10 @@
 # Experiment log
 
-One entry per experiment: what was run, why, and what came out. All numbers are on the
-**validation** split (n = 1500). The test and OOD splits are untouched until the final evaluation.
+One entry per experiment: what was run, why, and what came out. Numbers are on the **validation**
+split (n = 1500) unless a section says otherwise. The test and OOD splits were used once, in "Rule step 3"
+(2026-10-14), after the selection rule was fixed; E4 variants were evaluated on them afterwards as
+labelled post-hoc follow-ups. Status checked 2026-10-22: every experiment is finished; only the
+"Decision: [fill in]" lines (yours) are open.
 
 - Raw numbers for every run: `results/runs.csv` (regenerate with `py -3.10 -m scripts.summarise_runs`).
 - Exact commands: `scripts/run_sweep.sh`. Per-run training logs: `logs/` (not committed).
@@ -310,7 +313,7 @@ Analysis (AI-written; the student should check each point against the tables bef
 
 Caveats: one data split; 3 seeds; ~171k parameters only (no size sweep); 200 epochs; validation and
 test come from the same distribution; `ood_*` sets have 200 samples each, so their percentages move in
-steps of 0.5 %. Timings are not part of this evaluation (see B0, still preliminary).
+steps of 0.5 %. Timings are not part of this evaluation (see B2, the final benchmark).
 
 Decision (student): [fill in: which model is the headline, and how the report frames points 2, 4 and 7]
 
@@ -374,7 +377,7 @@ Decision: [fill in: (a) does the headline stay the rule-selected four (recommend
 follow-up), (b) whether to quote the ff6 + cons MLP as "best configuration found" with the caveat that test was
 seen for it]
 
-## B1. Speed benchmark, final (2026-10-15 21:28, AI-run, `py -3.10 -m scripts.run_benchmark`)
+## B1. Speed benchmark (2026-10-15 21:28, AI-run, `py -3.10 -m scripts.run_benchmark`; superseded by B2, kept for the record)
 
 Supersedes B0 and the 2026-10-14 contended run. Full tables: `results/benchmark.md`; figures
 `results/bench_pareto.png`, `bench_batch.png`, `bench_breakeven.png`; break-even vs batched RK4 in
@@ -486,8 +489,8 @@ Findings (seed 3001 per-sample, unless "3 seeds"):
 
 ## Not yet run
 
-Nothing required. Optional: rerun `scripts/run_benchmark.py` with desktop programs closed (3 minutes) to
-confirm the ms figures; a seed-1/2 replicate of the data-size and p sweeps.
+Nothing required. The benchmark rerun with desktop programs closed was done on 2026-10-21 (B2). Still
+optional: a seed-1/2 replicate of the data-size and p sweeps (they stay single-seed in the report).
 
 ## B0. Speed vs accuracy, first look (2026-10-13 15:37, AI-run, PRELIMINARY; superseded by B1)
 

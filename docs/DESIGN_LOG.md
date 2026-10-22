@@ -12,6 +12,9 @@ can defend it unaided in the interview. An entry with that line still blank is n
 **Status key:** DECIDED = I have chosen, nothing built yet. DONE = built and checked.
 OPEN = not decided. TO TEST = decided provisionally, a sweep or experiment will confirm.
 
+**Current status of every decision, weakness and open question: section F (updated 2026-10-22).** The
+status columns in sections A to C are as written at the time; section F says what happened since.
+
 ---
 
 ## A. Decisions made on 2026-10-12
@@ -79,9 +82,9 @@ Section 4.2, studied across `k`, `T` and `l`.
 |---|---|---|---|
 | Architecture | Unstacked, with bias | Unstacked, with bias, one set of `p` basis functions per output channel | Matches the best-performing variant |
 | Input | Only the forcing function | Forcing plus `m_p` and `b` | Harder, mixed input |
-| Smoothness | `l = 0.2` on a unit domain | Planned `ell` about 0.5 to 1 s on a 3 s window, so `ell/T` about 0.17 to 0.33 | Comparable range |
-| Data | 10,000 samples | 1,400 training samples | Much less data: the biggest practical difference |
-| Size | Width 40, depth 2 to 3 | Width 128, depth 3 | Supports sweeping down from my defaults |
+| Smoothness | `l = 0.2` on a unit domain | Decided in A6: `ell = 0.2` in normalised time (0.6 s on the 3 s window), the same as Lu et al. (the earlier plan was 0.5 to 1 s) | Same setting |
+| Data | 10,000 samples | 1,400 training samples (at the time of writing; the final smooth dataset has 7,000 train / 10,000 total, A6) | Was the biggest practical difference; now matched in total size |
+| Size | Width 40, depth 2 to 3 | Width 128 (samples) / 147 (coef), depth 3, p 64, about 171k parameters | Larger; only p was swept (E4), not width or depth |
 | Horizon | `T = 1` | `T = 3` | Errors grow with horizon; do not expect to match their error levels |
 | Output points | Random `y` per sample | The same fixed 151-point grid | Simpler, but only learns on that grid |
 
@@ -226,16 +229,16 @@ an assertion.
 
 | # | Weakness | Planned action | Status |
 |---|---|---|---|
-| W1 | Parameter counts are unmatched. By hand: DeepONet 171,396 vs MLPBaseline 89,220 (verify with `n_params`). A win could be explained by size alone. | Match parameter counts, or plot error against parameter count for both. | OPEN |
-| W2 | `p = 64`, width 128, depth 3 have no stated justification. | Sweeps in D7; choose at the knee of validation error vs p. | OPEN |
-| W3 | Branch and trunk share the same depth. The trunk sees a 1-D input and may need far less capacity. | Vary trunk depth and width separately from the branch. | OPEN |
-| W4 | Unstacked design (separate basis per channel) is untested against a shared trunk. | Optional comparison. Relevant to `qdot = dq/dt` consistency. | OPEN |
-| W5 | Nothing enforces `x(0) = x0`. | Measure the error at `t = 0`. If not about zero, consider a hard constraint and justify it. | OPEN |
-| W6 | MLP baseline takes the raw 304-dim input, so it is handicapped. | Add a baseline on the compact coefficients plus `t`. It may win; report it either way. | OPEN |
-| W7 | Speed claim could be inflated by comparing against a Python-loop RK4. | Compare against batched NumPy RK4 and `solve_ivp` at matched tolerance; report break-even including data generation and training time. | OPEN |
-| W8 | OOD set only changes `m_p` and `b`. | Frame as "how error degrades"; add OOD in torque amplitude, frequency or smoothness. | OPEN |
-| W9 | Relative L2 over all four channels lets large channels dominate. | Per-channel normalisation; report per-channel and per-time error and worst cases. | OPEN |
-| W10 | `README.md` status boxes are unticked and the Method table lists only fixed-step RK4 (RK45 now exists). | Update after I have verified each piece myself. | OPEN |
+| W1 | Parameter counts are unmatched. By hand: DeepONet 171,396 vs MLPBaseline 89,220 (verify with `n_params`). A win could be explained by size alone. | Match parameter counts, or plot error against parameter count for both. | DONE: `--match-params 171396`, all four models 170,692 to 171,754 (EXPERIMENTS E3) |
+| W2 | `p = 64`, width 128, depth 3 have no stated justification. | Sweeps in D7; choose at the knee of validation error vs p. | PARTLY DONE: p swept 8 to 256 (E4, one seed): 16 to 128 is a plateau, p = 64 defensible. Width and depth not swept (fixed by the parameter budget) |
+| W3 | Branch and trunk share the same depth. The trunk sees a 1-D input and may need far less capacity. | Vary trunk depth and width separately from the branch. | NOT DONE: report as a limitation / future work |
+| W4 | Unstacked design (separate basis per channel) is untested against a shared trunk. | Optional comparison. Relevant to `qdot = dq/dt` consistency. | NOT DONE (optional) |
+| W5 | Nothing enforces `x(0) = x0`. | Measure the error at `t = 0`. If not about zero, consider a hard constraint and justify it. | MEASURED, not enforced: median 0.3 to 1.3 % (positions), 1.3 to 6.3 % (velocities) of channel rms (`final_analysis.md`). Enforcing it is O5, your call |
+| W6 | MLP baseline takes the raw 304-dim input, so it is handicapped. | Add a baseline on the compact coefficients plus `t`. It may win; report it either way. | DONE: compact MLP and compact DeepONet; the compact MLP wins (test median 0.071) |
+| W7 | Speed claim could be inflated by comparing against a Python-loop RK4. | Compare against batched NumPy RK4 and `solve_ivp` at matched tolerance; report break-even including data generation and training time. | DONE: EXPERIMENTS B2, `results/benchmark.md` |
+| W8 | OOD set only changes `m_p` and `b`. | Frame as "how error degrades"; add OOD in torque amplitude, frequency or smoothness. | DONE: `ood_amp1`, `ood_amp2`, `ood_smooth`; degradation curve in `final_ood_degradation.png` |
+| W9 | Relative L2 over all four channels lets large channels dominate. | Per-channel normalisation; report per-channel and per-time error and worst cases. | DONE: per-channel z-score, per-channel / per-time / per-regime tables, worst cases (`final_analysis.md`) |
+| W10 | `README.md` status boxes are unticked and the Method table lists only fixed-step RK4 (RK45 now exists). | Update after I have verified each piece myself. | DONE (README updated; your own verification of each piece is still the E checklist) |
 
 ## C. Open decisions (mine to make)
 
@@ -252,8 +255,10 @@ an assertion.
 
 ## D. Changes I have developed (code and data)
 
-Nothing has been changed in the codebase as a result of the 2026-10-12 discussion. The decisions
-above are recorded but not yet implemented. As each is built, add a row here.
+(Written 2026-10-12, when nothing was implemented yet.) Every decision above has since been built; the
+record of what was built, when and by whom is `AI_LOG.md` rows 15 onwards and `docs/EXPERIMENTS.md`.
+This table was never filled in; section F summarises the outcome per decision. Add rows here only for
+changes you made yourself.
 
 | Date | Change | Files | How I checked it | AI involvement |
 |---|---|---|---|---|
@@ -273,3 +278,37 @@ above are recorded but not yet implemented. As each is built, add a row here.
 - [ ] Fill in every "My own words" cell in A and A2.
 - [ ] Add an `AI_LOG.md` row for the 2026-10-12 review and design discussion, and fill in the
       "Checked how" and "My decision" columns myself.
+
+## F. Status of every decision and open question (updated 2026-10-22, AI-written from the repo)
+
+Evidence only; the "My own words" cells above are still yours.
+
+| # | Status now | Evidence / note |
+|---|---|---|
+| D1 smooth torque family | DONE | `generate_smooth` in `src/data.py`; main dataset `data/dataset_smooth.npz` |
+| D2 keep sine family | DONE, diagnostics only | `data/dataset.npz`; one mutation (phase range) is still uncaught there |
+| D3 torque continuous in t | DONE | `smooth_torque_fn`; RK4 calls it at the substeps |
+| D4 time as t / T | DONE | `make_split`, `Surrogate` and the benchmark all divide by `T_FINAL` |
+| D5 float32 train, float64 metrics | DONE (implementation); rounding check written but no evidence it was run | `evaluate.py` casts to float64. `scripts/sanity_checks.py` contains the float32 check (and 9 other pre-flight checks) but no output from it exists (AI_LOG row 49): run it before claiming it. Indirect evidence: `Surrogate.predict` vs `evaluate.predict` differ by 2.5e-5 on values up to 29 (AI_LOG row 32) |
+| D6 tanh, compare SiLU once | tanh used; SiLU comparison NOT run | say "tanh, not compared" or drop the claim |
+| D7 one-axis sweeps, 3 seeds per point | PARTLY: lr x schedule grid per model; p sweep (1 seed); 3 seeds only for the selected settings and E4 variants | width / depth not swept (fixed by the 171k budget) |
+| D8 sweep order | DONE as planned | data, normalisation, overfit check, then sweeps |
+| D9 one decision table | PARTLY: decisions are spread over this log and EXPERIMENTS | the report needs the single table |
+| D10 Fourier recipe | DONE | A7 checks; `spectral_std` |
+| D11 operator-claim wording | DONE, used in README and the report draft | |
+| D12 baselines | DONE | E3 (accuracy), B2 (speed) |
+| D13 Lu et al. extra experiments | NOT RUN, except a different-`ell` family (`ood_smooth`) | sensor-count sweep and resolution robustness not done: say out of scope (O7) |
+| D14 regeneration plan | DONE | A7 |
+| A6 amplitude cap 6 N m | CONFIRMED by the spin statistics (A7) | in-range 95th percentile of peak `|q|` is 14 rad |
+| A8 normalisation and loss (O2, O3) | USED for every run; the planned comparison against plain MSE was NOT run | justify from A8's evidence (trajectory norms, channel shares), not from a comparison |
+| O1 data settings | DECIDED (A6) | |
+| O4 lr, optimiser, epochs, batch | DECIDED: Adam, batch 100, 200 epochs, lr and schedule per model on validation (EXPERIMENTS protocol, E3) | |
+| O5 enforce x(0) | OPEN (yours) | currently a reported limitation (W5) |
+| O6 Fourier vs grid GP | DECIDED: Fourier (D10) | |
+| O7 D13 scope | OPEN (yours) | effectively "out of scope" unless you say otherwise |
+| O8 amplitude shells | Kept as [6, 9] and [9, 12]; reported as a regime change | confirm in your own words |
+
+Section E (verification you owe) is unchanged. Evidence now exists for some items: the 8-substep truth vs
+DOP853 (EXPERIMENTS "Truth check", `solver_checks.md`); parameter counts (`test_model.py`, AI-written, and
+`benchmark.md`); the einsum (`test_einsum_equals_explicit_loop`, AI-written). The ticks are still yours: they
+mean *you* did it.

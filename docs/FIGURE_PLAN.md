@@ -4,13 +4,14 @@ Each figure should be explainable by you without help. "Status" shows what exist
 figure states its split (train / val / test / OOD), its metric definition, and what a reader should
 conclude. Never show a mean without a spread or worst case.
 
-Status updated 2026-10-15: every figure exists. "AI-made" means the plotting code was written by the AI
-(AI_LOG rows 37 to 41); you still have to be able to explain every curve. Numbers behind each figure:
+Status updated 2026-10-22: every figure exists (#1, the arm schematic, was added 2026-10-22 and is not yet
+committed). The speed figures (#16) were redrawn from the B2 quiet rerun on 2026-10-21. "AI-made" means the
+plotting code was written by the AI (AI_LOG rows 37 to 41, 44); you still have to be able to explain every curve. Numbers behind each figure:
 `results/final_analysis.md`, `results/solver_checks.md`, `results/benchmark.md`.
 
 | # | Figure / table | Purpose | File | Status | You must be able to explain |
 |---|---|---|---|---|---|
-| 1 | Arm schematic with conventions (`q1` from horizontal, `q2` relative, payload at tip) | Define the problem | `src/viz.py` screenshot (`P` key) or hand sketch | **to do (you)** | the conventions, and why gravity enters as `cos q1` |
+| 1 | Arm schematic with conventions (`q1` from horizontal, `q2` relative, payload at tip) | Define the problem | `results/arm_schematic.png` (`scripts/arm_schematic.py`) | done (AI-made) | the conventions, and why gravity enters as `cos q1` |
 | 2 | RK4 convergence: error vs `h`, log-log, slope 4 | Trust the ground truth | `results/solver_convergence.png` (`scripts/solver_figures.py`) | done (AI-made) | local vs global error; why the violent sample is not asymptotic at large h and shows order ~5 at mid h |
 | 3 | Energy conservation (`b = 0`, `tau = 0`) and energy balance with torque/friction | Trust the physics | `results/solver_energy.png` | done (AI-made) | why raw energy is not conserved with friction; why the 20 ms residual is larger (quadrature, not RK4) |
 | 4 | RK4 labels vs DOP853 on a calm, a violent test and a violent OOD sample | Cross-check, show where truth degrades | `results/solver_vs_dop853.png` | done (AI-made) | why the error grows after the elbow starts spinning |
@@ -34,6 +35,17 @@ Status updated 2026-10-15: every figure exists. "AI-made" means the plotting cod
 Colour convention: MLP coef `#0072B2`, MLP samples `#56B4E9`, DeepONet coef `#D55E00`, DeepONet samples
 `#E69F00` (colour-blind safe, Okabe-Ito); data figures use train `#0072B2`, OOD `#D55E00`, val `#009E73`,
 test `#CC79A7`.
+
+## Known figure defects (found 2026-10-22, AI_LOG row 45; not yet fixed)
+
+| Figure | Problem | Fix |
+|---|---|---|
+| `final_ood_degradation.png` (#15) | panel titles (a) and (b) run into each other | shorten the titles in `scripts/final_analysis.py` (line ~433 onwards) or wrap them, then rerun `python -m scripts.final_analysis` |
+| `bench_pareto.png` (#16) | the `rtol 0.03 / 0.04 / 0.05 / 0.06` labels overlap | label only a few tolerances, or offset the labels |
+| #2, #3, #4, #14, #15, #16, #18 | titles start with this plan's numbers ("#15 ...") and some are full sentences | drop the "#n" prefix and keep the claim for the caption, or crop in the report |
+
+Rerunning `scripts/final_analysis.py` rewrites `results/final_analysis.md` and the figures from the same
+checkpoints, so the numbers do not change; check the diff of the `.md` afterwards to confirm.
 
 Tables: (a) parameter ranges (README), (b) results (`results/final_eval.md`, `final_analysis.md`),
 (c) test report (`results/test_report.xml`), (d) mutation check (`results/mutation_check.md`), (e) AI-use

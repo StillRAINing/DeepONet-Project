@@ -5,6 +5,10 @@ finished. It is a **map**, not report text: each claim points to the number, the
 figure that shows it. Check every number against its file before you use it, and write the report in your own
 words. Sections follow the brief's "Written Project Documentation" list (5 to 10 pages).
 
+**Checked 2026-10-22** against `results/final_eval.md`, `benchmark.md` (B2), `final_analysis.md`, `solver_checks.md`,
+`mutation_check.md` and `test_report.xml`: every number below matches. Updated: test count (117), arm schematic now
+exists, AI_LOG row range, benchmark decision resolved. The one-page narrative of the whole project is `docs/PROJECT_OVERVIEW.md`.
+
 Headline metric everywhere: per-sample relative L2 over (time, channel), channels scaled by the train std.
 Test n = 1500, OOD sets n = 200 each. "3 seeds" = mean +- std over training seeds 3001, 1, 2.
 
@@ -32,7 +36,7 @@ Test n = 1500, OOD sets n = 200 each. "3 seeds" = mean +- std over training seed
 | Why it matters: one ODE solve per query; design studies need thousands to millions | benchmark (section 5) gives the actual numbers |
 | Scope: planar 2-link, viscous friction, fixed x0 and 3 s horizon, simulation only | README Scope, CLAUDE.md weak point 7 |
 
-Figure to make yourself: arm schematic (FIGURE_PLAN #1).
+Figure: arm schematic, `results/arm_schematic.png` (FIGURE_PLAN #1; AI-drawn 2026-10-22, AI_LOG row 44: check every convention against `dynamics.py`).
 
 ## 2. Inputs, outputs and data
 
@@ -64,7 +68,7 @@ What was validated, how, and what it cannot show (the brief asks for all three):
 | Solver | order on y' = -y and on the arm vs DOP853 | order 4.00 to 4.12 (scalar); approaches 4 on a calm arm sample | `results/solver_checks.md`, `results/solver_convergence.png` |
 | Solver | energy conservation (b = 0, tau = 0) | drift 4.3e-5 J at the dataset step (relative 2e-6) | `results/solver_energy.png` (a) |
 | Solver | energy balance with torque and friction | residual 1.2e-3 J (2.5 ms grid) | `results/solver_energy.png` (b) |
-| Code | 115 unit tests; 10 deliberate bugs | `results/test_report.xml`; `results/mutation_check.md` | |
+| Code | 117 unit tests (0 skipped, 0 failed); 10 deliberate bugs, 9 caught by a targeted test | `results/test_report.xml`; `results/mutation_check.md` | |
 | Surrogate | withheld test set, used once after a pre-written selection rule | table below | `results/final_eval.md`, `results/final_overview.png` |
 | Surrogate | physical constraints: qdot = dq/dt, energy balance | DeepONet more consistent; energy excess follows accuracy | `results/final_consistency.png` |
 | Surrogate | out-of-range robustness (4 OOD sets) | degradation curve | `results/final_ood_degradation.png` |
@@ -123,7 +127,7 @@ are different axes; the fair speed comparison is against the best classical meth
 
 ## 7. AI-use reflection
 
-Material: `AI_LOG.md` rows 1 to 42, especially the "Errors" column (rows 37 to 41 list the overclaims the AI
+Material: `AI_LOG.md` rows 1 to 53, especially the "Errors" column (rows 37 to 41 list the overclaims the AI
 made and corrected today). The "Checked how" and "My decision" columns are yours to fill before you write this.
 
 ## 8. References
@@ -141,7 +145,7 @@ RK45, DOP853); Spong / Siciliano for the 2-link arm equations (whichever textboo
    family is diagnostics only.
 5. The E1 / E2 / E3 / E4 "Decision: [fill in]" lines in `docs/EXPERIMENTS.md`.
 
-## Questions to rehearse (new analyses; add to STUDY_GUIDE section 7)
+## Questions to rehearse (new analyses; also in STUDY_GUIDE section 8)
 
 1. Why is batched RK4 a fairer rival than `solve_ivp`, and why does the speed-up shrink with batch size?
 2. What does "trunk cached" mean, and why can't the MLP do the same?

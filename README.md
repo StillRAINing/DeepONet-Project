@@ -37,7 +37,8 @@ Work in progress (final report due Fri 23 Oct 2026). `AI_LOG.md` is the running 
 - [x] Final analysis and every report figure (`results/final_analysis.md`, `docs/FIGURE_PLAN.md`)
 - [x] Test report (`results/test_report.xml`, 117 tests), mutation check (`results/mutation_check.md`),
       HTML documentation (`docs/html/`)
-- [ ] Written report and AI-use reflection
+- [x] Arm schematic (`results/arm_schematic.png`) and a live demo (`python -m src.demo`)
+- [ ] Written report and AI-use reflection (draft scaffold: `report/MMA3001_Report_DRAFT.docx`)
 
 ## Problem definition
 
@@ -123,12 +124,14 @@ traj = sur.predict(params, torque)          # (B, 151, 4); sur.predict(..., t=[0
 
 ```
 src/         source code (see Method)
-tests/       pytest unit tests (some solver/model tests are TODO skeletons, reported as skipped)
+tests/       pytest unit tests (117, none skipped; results/test_report.xml)
 scripts/     experiments, sweeps, diagnostics and figure scripts (python -m scripts.<name>)
 notebooks/   exploration
-docs/        design log, experiment log, study guide, hand derivations (docs/physics)
+docs/        start here (START_HERE.md), project overview, design log, experiment log, results summary,
+             figure plan, study guide, physics derivation notes (docs/physics)
 docs/html/   generated API documentation (pdoc), open docs/html/index.html
-results/     figures, tables (final_eval.md, benchmark.md, runs.csv), test_report.xml
+results/     figures, tables (final_eval.md, benchmark.md, runs.csv), test_report.xml; index in results/INDEX.md
+report/      report draft
 data/        generated datasets (not committed; regenerate with the recorded seed)
 checkpoints/ trained models (not committed)
 AI_LOG.md    running log of AI use
@@ -177,7 +180,9 @@ python -m scripts.truth_check               # accuracy of the stored RK4 labels 
 python -m scripts.data_stats                # dataset statistics (per-channel scales, wrapping)
 python -m scripts.input_sensitivity         # sensitivity of trajectories to tiny input changes
 pdoc src -o docs/html -d google --no-show-source   # HTML documentation
+python -m scripts.arm_schematic             # arm schematic -> results/arm_schematic.png
 python -m src.viz                           # interactive visualiser
+python -m src.demo                          # visualiser with RK4 vs the four selected models (needs checkpoints)
 ```
 
 Random seed: 3001 (`SEED` in `src/data.py`). The experiments in this repository were run with Python
@@ -227,8 +232,8 @@ after about 70,000 to 205,000 queries against `solve_ivp`, and 0.8 to 3.0 millio
 - The `m_p`/`b` out-of-range set is mild (calmer trajectories); it tests a small smooth shift.
 - One data split, three training seeds, one model size (about 171k parameters); the data-size and p
   sweeps are single-seed.
-- Timings are from one laptop with some background desktop load; absolute milliseconds may be 20 to 30 %
-  high, ratios are less affected.
+- Timings are from one laptop and one benchmark run (B2, desktop programs closed); repeated runs on this
+  machine differ by about 10 to 20 %.
 - The test set has also been used to report two post-hoc variants (ff6, ff6 + consistency); the headline
   numbers are the rule-selected models.
 - Out-of-range inputs are flagged with a warning, not corrected: the surrogate cannot extrapolate.

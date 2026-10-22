@@ -7,6 +7,13 @@ in a notebook or `docs/my_answers.md`, then ask me to challenge them.
 
 Status key: [ ] not yet, [x] done. Tick honestly.
 
+**Updated 2026-10-22.** Since this guide was written (2026-10-12/13), an AI session wrote most of the tests
+listed under "Checks to write yourself" (AI_LOG row 36). They are marked *(AI-written version exists: ...)*.
+A box is still yours to tick only when *you* can write or explain that test unaided. Line numbers in 5b
+were re-checked against the current code. The dataset is now the smooth random-torque family (24 numbers,
+peak 6 N m), not the sine family some older questions mention. New rehearsal questions: section 8.
+Facts and numbers to check your answers against: `docs/PROJECT_OVERVIEW.md`.
+
 ---
 
 ## 1. Dynamics (`dynamics.py`)
@@ -26,8 +33,8 @@ Status key: [ ] not yet, [x] done. Tick honestly.
 - Rung 4: only if stuck, ask me to review your formula; I will not hand over the line.
 
 ### Checks to write yourself
-- [ ] **Payload test against brute force.** Build the same arm as three bodies (link 1, link 2, point mass), compute T at random states directly from geometry, compare to `0.5 qdot^T M qdot`. (This is the test that kills the surviving mutations in `REVIEW_NOTES.md` section 1.)
-- [ ] Coriolis identity: `qdot^T (Mdot - 2C) qdot = 0` using a finite-difference `Mdot`.
+- [ ] **Payload test against brute force.** Build the same arm as three bodies (link 1, link 2, point mass), compute T at random states directly from geometry, compare to `0.5 qdot^T M qdot`. (This is the test that kills the surviving mutations in `REVIEW_NOTES.md` section 1.) *(AI-written version exists: `test_payload_inertia_matches_brute_force_at_mid_range_payload`.)*
+- [ ] Coriolis identity: `qdot^T (Mdot - 2C) qdot = 0` using a finite-difference `Mdot`. *(AI-written version exists in `tests/test_dynamics.py`.)*
 - [ ] Power balance: with torque and friction on, `dE/dt` from a finite difference of `energy` along a trajectory equals `tau . qdot - b |qdot|^2` to O(h^4)-ish.
 - [ ] Pendulum limit: find a setting where the arm is one rigid pendulum (for example joint 2 held at `q2 = 0` by a very stiff PD torque, or simply a hanging-equilibrium small-oscillation check). Work out the effective inertia, the gravity term and the small-angle period yourself, then compare with the simulation. Which of the two routes is valid, and why is zero torque on joint 2 *not* a lock?
 - [ ] Re-derive `M`, `C`, `G` by hand (AI_LOG item 3). The PDFs in `docs/physics/` are reading material (they look AI-generated; see `REVIEW_NOTES.md` section 1), not a substitute: can you do it with every page closed?
@@ -56,13 +63,13 @@ Status key: [ ] not yet, [x] done. Tick honestly.
 - Rung 4: why does the measured order break down at tiny `h` (round-off) or huge `h` (outside the asymptotic regime)? Plot error vs `h` on log-log axes.
 
 ### Checks to write yourself
-- [ ] `tests/test_solvers.py` does not exist. Create it. At minimum: exact solution on `y' = -y`, order estimate in `[3.8, 4.2]`, exactness on a cubic polynomial RHS that RK4 integrates exactly (`y' = t^3`).
-- [ ] Re-run the mutation "perturb `k2` by 1%" and confirm your test now fails.
+- [ ] `tests/test_solvers.py` (did not exist on 2026-10-12). At minimum: exact solution on `y' = -y`, order estimate in `[3.8, 4.2]`, exactness on a cubic polynomial RHS that RK4 integrates exactly (`y' = t^3`). *(AI-written version exists: 6 tests, including the order on y' = -y and on a mild arm sample. Can you say why the arm test uses a mild sample, h = 0.04 to 0.005 s, and a reference much better than the finest run?)*
+- [ ] Re-run the mutation "perturb `k2` by 1%" and confirm your test now fails. *(Done by `scripts/mutation_check.py`: caught by 9 tests.)*
 - [ ] Compare `rk4_integrate` with `solve_ivp(rtol=1e-10)` on the arm for a mild sample, then on a *spinning* sample, and explain the difference in agreement (`REVIEW_NOTES.md` 2.2).
 
 ### Examiner questions
 - "Why is a fixed-step solver acceptable for ground truth? When would it not be?"
-- "How did you choose `substeps = 8`? Show me the evidence." (You currently cannot: see 2.2.)
+- "How did you choose `substeps = 8`? Show me the evidence." (Evidence now exists for the smooth family: `results/solver_checks.md` #2 and #4, EXPERIMENTS "Truth check". Can you explain it?)
 - "Where does the 1/6 come from?"
 
 ---
@@ -85,10 +92,10 @@ Status key: [ ] not yet, [x] done. Tick honestly.
 - Rung 4: add a "causality" check: change `u[0]` only; outputs for `b >= 1` must be unchanged.
 
 ### Checks to write yourself
-- [ ] Einsum equals loop version.
-- [ ] Trunk is independent of `u`: changing `u` leaves trunk output unchanged.
+- [ ] Einsum equals loop version. *(AI-written version exists: `test_einsum_equals_explicit_loop`; it catches the swapped-channel mutation.)*
+- [ ] Trunk is independent of `u`: changing `u` leaves trunk output unchanged. *(AI-written version exists in `tests/test_model.py`.)*
 - [ ] Output at time `t_i` depends on `t_i` only through the trunk (permuting the time grid permutes the outputs).
-- [ ] Parameter counts: derive `n_params` by hand for one config and compare with `n_params(model)`.
+- [ ] Parameter counts: derive `n_params` by hand for one config and compare with `n_params(model)`. *(AI-written version exists in `tests/test_model.py`; the four final counts are 171,396 / 171,183 / 170,692 / 171,754.)*
 - [ ] Overfit 5 samples (see section 4): if the DeepONet cannot do that, there is a bug, not a hyperparameter problem.
 
 ### Examiner questions
@@ -101,9 +108,9 @@ Status key: [ ] not yet, [x] done. Tick honestly.
 ## 4. Training (`train.py`)
 
 ### Questions first
-1. What is the exact loss: MSE on normalised channels? Per-channel weights? Which channel dominates the raw MSE (see `scripts/data_stats.py` output: `q2dot` carries ~57% of `sum(x^2)`)?
+1. What is the exact loss: MSE on normalised channels? Per-channel weights? Which channel dominates the raw MSE (on the old sine data `q2dot` carried ~57% of `sum(x^2)`; what is it on the smooth data?)
 2. Which statistics are used for normalisation, from which split, and where in the code could test data leak into them?
-3. Normalise the branch input and the time input too. Why? What goes wrong if `t` is in [0, 3] and torque samples are in [-15, 15] while `m_p` is in [0, 1]?
+3. Normalise the branch input and the time input too. Why? What goes wrong if `t` is in [0, 3] and torque samples are in [-6, 6] while `m_p` is in [0, 1]?
 4. Do you train on all `(sample, time)` pairs per step, or subsample times? What does each cost and bias?
 5. How do you choose the epoch to keep, and on which split? Why not the test split?
 6. How will you report variance across seeds? One training run is an anecdote.
@@ -154,7 +161,7 @@ Status key: [ ] not yet, [x] done. Tick honestly.
 
 Most of `train.py` and `evaluate.py` was AI-written at your request (AI_LOG rows 16 to 18, 20), so an
 examiner can point at any line. Questions only, no answers. Answer aloud without looking at the code,
-then check against it. Line numbers are as of 2026-10-13.
+then check against it. Line numbers re-checked 2026-10-22.
 
 **`src/train.py`**
 1. `relative_l2_loss`, line 58: `size = true + norm.mean / norm.std`. What is this quantity in raw
@@ -163,9 +170,9 @@ then check against it. Line numbers are as of 2026-10-13.
 2. Line 59: why `+ 1e-12` *inside* the square root? What is the derivative of `sqrt(x)` at `x = 0`?
 3. Line 60: can `clamp_min(1e-8)` ever trigger on this dataset? (DESIGN_LOG A8 has the smallest trajectory norm.)
 4. Line 61: is the loss the mean of per-sample ratios or a ratio of sums? Which samples does each one favour?
-5. `InputNormaliser.fit`, line 78: which input features are constant in training, and why does std 1
+5. `InputNormaliser.fit`, lines 95 to 101: which input features are constant in training, and why does std 1
    (not a tiny floor) matter for `ood_smooth`?
-6. `evaluate_loss`, line 129: why multiply by `len(pred)` and divide by `len(u)`?
+6. `evaluate_loss`, line 153: why multiply by `len(pred)` and divide by `len(u)`?
 7. `fit`: why `copy.deepcopy(model.state_dict())`? What would `best_state` contain at the end without the copy?
 8. `fit` selects the epoch on val. Is the val error of the selected model still an unbiased estimate
    of its error on new data? What is the test split for, then?
@@ -198,8 +205,12 @@ then check against it. Line numbers are as of 2026-10-13.
 | Decision | Draft your justification here | Evidence you have |
 |---|---|---|
 | Vertical plane + gravity | | |
-| Torque family (sinusoids) and 8-dim input | | |
-| `A`, `f`, `m_p`, `b` ranges | | `scripts/data_stats.py`, `scripts/torque_range_sweep.py` |
+| Torque family (smooth random Fourier, 24 numbers, given as 302 samples or as coefficients) | | DESIGN_LOG D1, D10, D11, A7 |
+| Peak torque cap 6 N m, `ell = 0.2`, K = 6 | | DESIGN_LOG A6, A7 |
+| Compact-input baselines and the matched 171k budget | | EXPERIMENTS E3 |
+| Selection rule fixed before results; 3 seeds | | EXPERIMENTS "Selection rule" |
+| Headline = rule-selected models, E4 as post-hoc | | EXPERIMENTS E4 |
+| `m_p`, `b` ranges and the four OOD sets | | DESIGN_LOG A6, `final_analysis.md` OOD section |
 | Horizon `T` and initial condition | | |
 | `substeps` for ground truth | | convergence test |
 | Normalisation scheme | | train-only stats |
@@ -210,7 +221,7 @@ then check against it. Line numbers are as of 2026-10-13.
 | Speed comparison and tolerance matched to surrogate error | | `src/benchmark.py` |
 
 ## 7. Report/presentation risks (from CLAUDE.md, restated as questions to rehearse)
-1. "Is this operator learning or a regression on eight numbers?"
+1. "Is this operator learning or a regression on 24 numbers?" (and what does `ood_smooth` show?)
 2. "Did the baseline get the same tuning effort?"
 3. "What exactly is faster than what, at what accuracy, and how many queries until it pays off?"
 4. "Does your OOD test test anything?"
@@ -218,3 +229,39 @@ then check against it. Line numbers are as of 2026-10-13.
 6. "Is the output physically consistent?"
 7. "What does this not show?" (fixed initial condition, simulation only, one arm.)
 8. "Which parts did AI write and how do you know they are right?"
+
+## 8. Rehearsal questions on the finished results (added 2026-10-22; no answers here)
+
+Answer aloud, then check against the file named in brackets.
+
+**Results and framing**
+1. In one sentence each: what did the MLP win, what did the DeepONet win, and what did nobody win? (`final_eval.md`)
+2. Why is a test median of 0.071 not "7 % error"? What is it 7 % of, averaged how, over which split? (`evaluate.rel_l2_per_sample`)
+3. The MLP-vs-DeepONet gap is "7.7 to 12 seed std". Explain what that ratio is and why it matters. (`analysis_seeds.md`)
+4. The val ranking and the test ranking agree to 0.003. What does that tell you, and what would a disagreement have meant?
+5. Why is the headline the rule-selected MLP (0.071) and not the ff6 + cons MLP (0.066)?
+6. Why does compact input beat samples input in distribution but lose on `ood_smooth`? (EXPERIMENTS rule step 3, point 7)
+7. The DeepONet beats the MLP on `ood_smooth` by about 1 std. Why can't you claim a win?
+8. Why did the DeepONet not overtake the MLP at small training-set sizes, contrary to a common expectation? (`e4_datasize.png`)
+9. Why is p = 8 clearly worse, and why is p = 256 at equal budget worse but at fixed width not? (`e4_psweep.png`)
+
+**Where it fails**
+10. Why is the p95 about 0.6 for every model, and how close is that to the mean-trajectory yardstick?
+11. Why does the error grow with time? Give a physics reason and a learning reason.
+12. Why are q2 and the velocities harder than q1?
+13. The energy-balance excess has p95 above 1 for every model. What does that mean physically?
+14. The predicted state at t = 0 is not zero. Why not, and what would a hard constraint cost?
+
+**Speed**
+15. Why did the speed-ups shrink between B1 and B2, and why does that move the conclusion *against* the surrogates?
+16. Why does batched RK4 get cheaper per trajectory as the batch grows, but the network barely does?
+17. Derive the break-even formula and explain each term. Why is the lr grid sometimes counted?
+18. Why does `solve_ivp` *fail* at rtol 0.08 to 0.1 instead of just being inaccurate?
+19. What does the cProfile output say about where the scalar solver spends its time?
+
+**Validation, honesty, AI**
+20. What counts as invalid input and what counts as unsupported, and why do they behave differently? (`src/validate.py`)
+21. Why do the simulators not warn about out-of-range inputs when the surrogate does?
+22. Name every place where the test set has been looked at, and in what order.
+23. Which crucial-module code was AI-written, and for each, what did you do to be sure it is right? (`AI_LOG.md` rows 16 to 18, 20, 29, 36)
+24. The one uncaught mutation is in the sine family. Why does that not threaten the headline results?

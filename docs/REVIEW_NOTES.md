@@ -1,5 +1,29 @@
 # Review notes (AI-assisted audit, 2026-10-12)
 
+> **Historical document (banner added 2026-10-22).** This audit is of the **old sine-family dataset**
+> (`A` up to 15 N m, 1,400 train samples) and of the code as it stood on 2026-10-12. Keep it as the
+> record of *why* the project changed course; do not quote its numbers as current results. What
+> happened to each finding:
+>
+> | Section | Finding | Outcome |
+> |---|---|---|
+> | 1 | tests miss parallel-axis and RK4-stage bugs; no `test_solvers.py` | resolved: tests written (AI_LOG row 36); all three now caught (`results/mutation_check.md`). Phase-range mutation (sine family) still missed |
+> | 1 | M, C, G re-derived by hand? | **still open** (AI_LOG item 3) |
+> | 2.1, 2.2 | arm spins out; RK4 unconverged on the tail | resolved by the smooth family with a 6 N m peak cap: labels within about 1e-8 median of DOP853 (`solver_checks.md`, EXPERIMENTS "Truth check"). The `(8, 2)` per-joint cap proposed here was **not** adopted |
+> | 2.3 | OOD set calmer than train | confirmed on the new data; amplitude and smoothness OOD sets added; magnitude-matched comparison in `final_analysis.md` |
+> | 2.4 | input redundancy | smooth family (24 numbers), honest wording D11; compact-input baselines |
+> | 2.5, 2.7 | regime switching, sensitivity | re-measured on the final data: `final_analysis.md` (regime table, input sensitivity) |
+> | 2.6 | reference floors | replaced by E0 / naive baselines on test (mean trajectory 0.43, 1-NN 0.42) |
+> | 3.1 | trunk recomputed for every sample | still true inside `DeepONet.forward`; the benchmark measures a cached-trunk variant separately (0.02 ms / traj) |
+> | 3.2 | no test pins down the einsum | resolved: `test_einsum_equals_explicit_loop` |
+> | 3.4 | phase periodicity in a compact input | not applicable: the smooth family has no phase input |
+> | 3.5 | README promises input rejection | resolved: `src/validate.py`, `src/surrogate.py` |
+> | 4 | four-row baseline table | done (EXPERIMENTS E3); the compact MLP wins |
+> | 5 | speed numbers | superseded by `results/benchmark.md` (B2, 2026-10-21) |
+> | 6 | order of work | followed |
+>
+> Also stale: the `data.py` gravity comment (fixed); the skipped skeleton tests (all written; suite now 117 pass, 0 skipped).
+
 Written while you were away. **Nothing here changes your crucial code** (`dynamics.py`,
 `solvers.py`, `model.py`). It is evidence for you to act on. Numbers were produced by
 `scripts/data_stats.py` and throwaway scripts; reproduce them before quoting any in the report.
