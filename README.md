@@ -35,7 +35,7 @@ Work in progress (final report due Fri 23 Oct 2026). `AI_LOG.md` is the running 
 - [x] Benchmark (`results/benchmark.md`, 2026-10-21, EXPERIMENTS B2): quiet rerun with desktop programs closed
 - [x] Fair-fight follow-ups (E4): Fourier time features, consistency penalty, data size, basis size p
 - [x] Final analysis and every report figure (`results/final_analysis.md`, `docs/FIGURE_PLAN.md`)
-- [x] Test report (`results/test_report.xml`, 117 tests), mutation check (`results/mutation_check.md`),
+- [x] Test report (`results/test_report.html`, open in a browser; `results/test_report.xml`; 117 tests), mutation check (`results/mutation_check.md`),
       HTML documentation (`docs/html/`)
 - [x] Arm schematic (`results/arm_schematic.png`) and a live demo (`python -m src.demo`)
 - [ ] Written report and AI-use reflection (draft scaffold: `report/MMA3001_Report_DRAFT.docx`)
@@ -124,7 +124,7 @@ traj = sur.predict(params, torque)          # (B, 151, 4); sur.predict(..., t=[0
 
 ```
 src/         source code (see Method)
-tests/       pytest unit tests (117, none skipped; results/test_report.xml)
+tests/       pytest unit tests (117, none skipped; results/test_report.html)
 scripts/     experiments, sweeps, diagnostics and figure scripts (python -m scripts.<name>)
 notebooks/   exploration
 docs/        start here (START_HERE.md), project overview, design log, experiment log, results summary,
@@ -162,7 +162,8 @@ PyTorch runs on CPU only; no GPU is needed.
 Datasets and checkpoints are not committed (large binaries). Everything is regenerated from seed 3001.
 
 ```bash
-pytest --junitxml=results/test_report.xml   # tests + test report
+pytest --junitxml=results/test_report.xml   # tests + test report (XML)
+pytest --html=results/test_report.html --self-contained-html   # HTML test report (needs pytest-html)
 python -m src.data --smooth                 # main dataset into data/ (about 10,000 RK4 trajectories)
 python -m src.data                          # sine-family dataset (diagnostics)
 bash scripts/run_sweep.sh                   # the fair-comparison sweep (docs/EXPERIMENTS.md)

@@ -7,3 +7,4 @@ pdoc
 jupyter
 pygame-ce
 psutil
+pytest-html

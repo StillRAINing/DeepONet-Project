@@ -27,6 +27,7 @@ Figure numbers (#) are those in `docs/FIGURE_PLAN.md`. The script that writes ea
 
 | File | What it shows |
 |---|---|
+| `test_report.html` | pytest results, readable in a browser [`pytest --html=results/test_report.html --self-contained-html`] |
 | `test_report.xml` | pytest results (table c) [`pytest --junitxml=results/test_report.xml`] |
 | `mutation_check.md` | 10 deliberate bugs and which tests caught them (table d) [`scripts/mutation_check.py`] |
 
