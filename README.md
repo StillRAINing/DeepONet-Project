@@ -34,7 +34,7 @@ Work in progress (final report due Fri 23 Oct 2026). `AI_LOG.md` is the running 
 - [x] Input validation (`src/validate.py`, `src/surrogate.py`)
 - [x] Benchmark (`results/benchmark.md`, 2026-10-21, EXPERIMENTS B2): quiet rerun with desktop programs closed
 - [x] Fair-fight follow-ups (E4): Fourier time features, consistency penalty, data size, basis size p
-- [x] Final analysis and every report figure (`results/final_analysis.md`, `docs/FIGURE_PLAN.md`)
+- [x] Final analysis and every report figure (`results/final_analysis.md`, `results/INDEX.md`)
 - [x] Test report (`results/test_report.html`, open in a browser; `results/test_report.xml`; 117 tests), mutation check (`results/mutation_check.md`),
       HTML documentation (`docs/html/`)
 - [x] Arm schematic (`results/arm_schematic.png`) and a live demo (`python -m src.demo`)
@@ -126,9 +126,8 @@ traj = sur.predict(params, torque)          # (B, 151, 4); sur.predict(..., t=[0
 src/         source code (see Method)
 tests/       pytest unit tests (117, none skipped; results/test_report.html)
 scripts/     experiments, sweeps, diagnostics and figure scripts (python -m scripts.<name>)
-notebooks/   exploration
-docs/        start here (START_HERE.md), project overview, design log, experiment log, results summary,
-             figure plan, study guide, physics derivation notes (docs/physics)
+docs/        design log (DESIGN_LOG.md), experiment log and selection rule (EXPERIMENTS.md),
+             code audit (REVIEW_NOTES.md)
 docs/html/   generated API documentation (pdoc), open docs/html/index.html
 results/     figures, tables (final_eval.md, benchmark.md, runs.csv), test_report.xml; index in results/INDEX.md
 report/      report draft
@@ -175,7 +174,7 @@ python -m scripts.run_benchmark             # speed / memory / FLOPs / break-eve
 python -m scripts.final_analysis            # every remaining report figure and table -> results/final_analysis.md
 python -m scripts.solver_figures            # RK4 convergence, energy, labels vs DOP853 -> results/solver_checks.md
 python -m scripts.mutation_check            # do the tests catch deliberate bugs? -> results/mutation_check.md
-python -m scripts.plot_training             # loss curves -> results/training_curves/loss_*.png
+python -m scripts.plot_training             # loss curves -> results/training_curves/ (loss_by_model.png, loss_all_runs.png)
 python -m scripts.plot_eval checkpoints/<a>.pt [<b>.pt ...]   # evaluation figures on val
 python -m scripts.truth_check               # accuracy of the stored RK4 labels on every split
 python -m scripts.data_stats                # dataset statistics (per-channel scales, wrapping)

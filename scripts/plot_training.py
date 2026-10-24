@@ -23,7 +23,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "results"
 CURVES = RESULTS / "training_curves"
-TRAIN_C, VAL_C = "#0072B2", "#009E73"   # colours from docs/FIGURE_PLAN.md
+TRAIN_C, VAL_C = "#0072B2", "#009E73"   # Okabe-Ito (colour-blind safe)
 
 LINE = re.compile(r"epoch\s+(\d+)\s+train\s+([\d.eE+-]+)\s+val\s+([\d.eE+-]+)")
 

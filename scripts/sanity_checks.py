@@ -1,4 +1,4 @@
-"""Pre-flight sanity checks on the real smooth dataset (docs/STUDY_GUIDE.md sections 4 and 5, DESIGN_LOG E).
+"""Pre-flight sanity checks on the real smooth dataset (docs/DESIGN_LOG.md, section E).
 
     py -3.10 -m scripts.sanity_checks                 # everything (~10-15 min on a laptop CPU)
     py -3.10 -m scripts.sanity_checks --only metric float32 substeps energy params leak

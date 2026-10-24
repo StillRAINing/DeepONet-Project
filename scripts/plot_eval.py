@@ -1,4 +1,4 @@
-"""Evaluation figures from saved checkpoints (FIGURE_PLAN #10, #11, #12, #13, #17). Plotting only:
+"""Evaluation figures from saved checkpoints. Plotting only:
 every number comes from the functions in src/evaluate.py.
 
     py -3.10 -m scripts.plot_eval checkpoints/a.pt                         # one model, val split
@@ -32,7 +32,7 @@ from src.evaluate import CHANNELS, error_vs_time, predict, rel_l2_per_sample
 from src.train import load_checkpoint, make_split
 
 RESULTS = Path(__file__).resolve().parent.parent / "results"
-# Okabe-Ito (colour-blind safe), first two match FIGURE_PLAN's train/val colours; each series also
+# Okabe-Ito (colour-blind safe), first two match the train/val colours in plot_training; each series also
 # gets its own line style so identity never depends on colour alone.
 COLOURS = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#D55E00", "#56B4E9"]
 STYLES = ["-", "--", "-.", ":", (0, (5, 1)), (0, (3, 1, 1, 1))]

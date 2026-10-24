@@ -11,17 +11,17 @@ Runs AFTER the selection rule (docs/EXPERIMENTS.md): nothing here chooses a mode
 Writes results/final_*.png, results/e4_*.png, results/bench_*.png and results/final_analysis.md.
 Per-sample arrays are cached in results/final_persample.npz (git-ignored).
 
-Figures (FIGURE_PLAN numbers in brackets):
-  final_overview        median and p95 per split, four models, seed mean +- std        (#17 summary)
-  final_consistency     qdot vs dq/dt and energy-balance excess on test                  (#14)
+Figures:
+  final_overview        median and p95 per split, four models, seed mean +- std
+  final_consistency     qdot vs dq/dt and energy-balance excess on test
   final_ood_degradation error vs torque amplitude across the range edge; OOD m_p/b vs a
-                        magnitude-matched test subset; rougher-torque set by input type  (#15)
-  final_seeds           every seed's test median and p95, per model and variant          (#18)
+                        magnitude-matched test subset; rougher-torque set by input type
+  final_seeds           every seed's test median and p95, per model and variant
   final_sensitivity     how far a 1 % input change moves the TRUE trajectory, vs surrogate error
   e4_variants           Fourier features / consistency penalty, validation, 3 seeds      (E4)
   e4_datasize           validation error vs number of training trajectories              (E4)
   e4_psweep             DeepONet basis size p, equal parameter budget and fixed width    (W2)
-  bench_pareto, bench_batch, bench_breakeven                                             (#16)
+  bench_pareto, bench_batch, bench_breakeven
 
 Plotting / analysis glue written by the AI (AI_LOG row to add). Every metric comes from src/evaluate.py.
 """

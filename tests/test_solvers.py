@@ -1,4 +1,4 @@
-"""RK4 solver tests (see docs/STUDY_GUIDE.md section 2).
+"""RK4 solver tests.
 
 Written by the AI on request (AI_LOG row to add); the questions from the original skeleton are kept
 in each docstring with a short answer, so the reasoning can be checked and defended.

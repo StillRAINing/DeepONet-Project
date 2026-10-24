@@ -1,4 +1,4 @@
-"""Arm schematic for the report (FIGURE_PLAN #1): links, angles, torques, payload, gravity.
+"""Arm schematic for the report: links, angles, torques, payload, gravity.
 
 Geometry and conventions are read from ``src.dynamics.ArmParams`` so the figure cannot drift from the
 model: ``q1`` from the +x (horizontal) axis, ``q2`` relative to link 1, both counter-clockwise positive,
@@ -18,7 +18,7 @@ from src.dynamics import ArmParams
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "results" / "arm_schematic"
 
-LINK1_C, LINK2_C = "#0072B2", "#E69F00"     # Okabe-Ito, as in docs/FIGURE_PLAN.md
+LINK1_C, LINK2_C = "#0072B2", "#E69F00"     # Okabe-Ito (colour-blind safe)
 PAYLOAD_C, TORQUE_C, GRAV_C = "#D55E00", "#CC79A7", "#555555"
 INK = "#222222"
 

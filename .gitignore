@@ -17,3 +17,16 @@ MMA3001 Workshop*.pdf
 # Report drafts (local only; back up outside git)
 report/*.docx
 ~$*
+
+# Local-only working files (not part of the submission)
+MMA3001_2026_Project_Brief.pdf
+notebooks/
+docs/*
+!docs/html/
+!docs/DESIGN_LOG.md
+!docs/EXPERIMENTS.md
+!docs/REVIEW_NOTES.md
+results/evalfig_val_*
+results/training_curves/loss_*.png
+!results/training_curves/loss_by_model.png
+!results/training_curves/loss_all_runs.png

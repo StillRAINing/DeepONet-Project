@@ -63,7 +63,7 @@ def test_time_features_values():
     assert time_features(t, 0) is t
 
 
-# --- Semantic tests the shape tests cannot give (docs/STUDY_GUIDE.md section 3) ---
+# --- Semantic tests the shape tests cannot give ---
 # Written by the AI on request (AI_LOG row to add).
 
 
