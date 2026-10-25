@@ -62,6 +62,7 @@ def validate_params(params, *, ranges: dict = SMOOTH_RANGES, strict: bool = Fals
         raise ValueError("payload mass m_p must be >= 0 kg")
     if np.any(arr[:, 1] < 0):
         raise ValueError("friction b must be >= 0 N m s/rad")
+    # range check only for the surrogate; the simulators pass ranges=None
     for col, key, unit in (((0, "m_p", "kg"), (1, "b", "N m s/rad")) if ranges is not None else ()):
         lo, hi = ranges[key]
         bad = (arr[:, col] < lo) | (arr[:, col] > hi)
@@ -90,8 +91,8 @@ def validate_torque(torque, *, n_t: int = N_T, ranges: dict = SMOOTH_RANGES,
         arr = arr[None]
     if arr.ndim != 3 or arr.shape[1:] != (2, n_t):
         raise ValueError(f"torque must have shape (2, {n_t}) or (B, 2, {n_t}); got {arr.shape}")
-    cap = ranges["A"][1]
-    peak = np.abs(arr).max(axis=(1, 2))
+    cap = ranges["A"][1]  # training cap on the torque peak (6 N m)
+    peak = np.abs(arr).max(axis=(1, 2))  # peak |tau| of each sample over both joints and all times
     if np.any(peak > cap):
         _report(f"torque peak |tau| up to {peak.max():.2f} N m exceeds the trained cap of {cap} N m "
                 f"in {int((peak > cap).sum())} of {len(arr)} rows: extrapolation", strict)
@@ -109,6 +110,7 @@ def validate_time(t, *, t_final: float = T_FINAL, strict: bool = False) -> np.nd
         raise ValueError(f"t must be a non-empty 1-D array of seconds; got shape {arr.shape}")
     if np.any(arr < 0):
         raise ValueError("query times must be >= 0 s")
+    # beyond the horizon is allowed but warned: the network never saw those times
     if np.any(arr > t_final):
         _report(f"query time beyond the horizon T = {t_final} s: the network was only trained on "
                 f"[0, {t_final}] s", strict)

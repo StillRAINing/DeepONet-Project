@@ -28,6 +28,7 @@ def checkpoints(variant: str = "base", models=None, seed: int = SEED) -> dict:
     """``{display name: checkpoint file}`` for one variant of ``scripts.final_eval``, optionally a subset.
 
     ``models`` is an iterable of ``"<model>-<input>"`` keys such as ``"deeponet-coef"``."""
+    # checkpoint names for this variant (base = the selection-rule models)
     table = VARIANTS["" if variant == "base" else variant]
     keys = {f"{m}-{i}": (m, i) for m, i in table}
     if models is not None:
@@ -45,6 +46,7 @@ def register_surrogates(files: dict, ckpt_dir: Path = CKPT_DIR) -> None:
     sampled on the 151-point grid instead, which is exactly what they were trained on."""
     for name, file in files.items():
         sur = Surrogate.from_checkpoint(ckpt_dir / file)
+        # the viewer passes coefficients, so samples-input models get the torque sampled on the grid
         if sur.input_mode == "samples":
             f = lambda params, coef, sur=sur: sur.predict(params, smooth_torque_samples(coef)[None])[0]
         else:

@@ -18,11 +18,12 @@ def rk4_step(
     Returns:
         State at t + h.
     """
+    # four slopes: at the start, two at the midpoint, one at the end
     k1 = f(t, x)
     k2 = f(t + h / 2, x + h / 2 * k1)
     k3 = f(t + h / 2, x + h / 2 * k2)
     k4 = f(t + h, x + h * k3)
-    return x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    return x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)  # weighted average of the slopes (1, 2, 2, 1) / 6
 
 
 def rk4_integrate(
@@ -42,6 +43,7 @@ def rk4_integrate(
     out = np.empty((len(t_grid), x0.size))
     out[0] = x0
     h = t_grid[1] - t_grid[0]
+    # fixed step: march along the grid one step at a time
     for i in range(len(t_grid) - 1):
         out[i + 1] = rk4_step(f, t_grid[i], out[i], h)
     return out
@@ -75,10 +77,11 @@ def rk45_step(
     """
     k = []
     for i in range(7):
+        # 7 stages, each built from the earlier slopes with the Butcher-table weights
         xi = x + h * sum(a * kj for a, kj in zip(_A[i], k)) if i else x
         k.append(f(t + _C[i] * h, xi))
     K = np.array(k)
-    return x + h * (_B5 @ K), h * ((_B5 - _B4) @ K)
+    return x + h * (_B5 @ K), h * ((_B5 - _B4) @ K)  # 5th-order answer, and 5th minus 4th as the error estimate
 
 
 def rk45_integrate(
@@ -112,8 +115,9 @@ def rk45_integrate(
     for i in range(1, len(t_grid)):
         t_end = t_grid[i]
         while t < t_end:
-            h = min(h, t_end - t)
+            h = min(h, t_end - t)  # don't step past the next output time
             x_new, err = rk45_step(f, t, x, h)
+            # scale the error by the tolerance, so e <= 1 means the step is accurate enough
             scale = atol + rtol * np.maximum(np.abs(x), np.abs(x_new))
             e = np.sqrt(np.mean((err / scale) ** 2))
             if e <= 1.0:  # accept
@@ -121,6 +125,7 @@ def rk45_integrate(
                 x = x_new
                 if t_end - t < 1e-12 * max(1.0, abs(t_end)):
                     t = t_end
+            # if the step was rejected, t and x stay the same and it is retried with a smaller h
             # standard step-size controller (order 5 -> exponent 1/5)
             h *= min(5.0, max(0.2, 0.9 * (1.0 / max(e, 1e-10)) ** 0.2))
         out[i] = x

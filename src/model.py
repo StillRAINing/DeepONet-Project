@@ -27,6 +27,7 @@ def branch_input(params, torque) -> torch.Tensor:
 def mlp(d_in: int, width: int, depth: int, d_out: int, act=nn.Tanh) -> nn.Sequential:
     """``depth`` hidden layers of size ``width`` followed by a linear output layer."""
     layers, d = [], d_in
+    # hidden layers with tanh, then a linear output layer
     for _ in range(depth):
         layers += [nn.Linear(d, width), act()]
         d = width
@@ -37,7 +38,7 @@ def mlp(d_in: int, width: int, depth: int, d_out: int, act=nn.Tanh) -> nn.Sequen
 def _as_time_batch(t: torch.Tensor, batch: int) -> torch.Tensor:
     """Return t as (B, n_t, 1)."""
     if t.ndim == 1:
-        t = t.unsqueeze(0).expand(batch, -1)
+        t = t.unsqueeze(0).expand(batch, -1)  # same time grid for every sample
     if t.ndim != 2 or t.shape[0] != batch:
         raise ValueError(f"t must have shape (n_t,) or (B, n_t); got {tuple(t.shape)}")
     return t.unsqueeze(-1)
@@ -70,9 +71,9 @@ class DeepONet(nn.Module):
                  branch_depth: int = 3, trunk_depth: int = 3, n_fourier: int = 0):
         super().__init__()
         self.d_u, self.p, self.n_fourier = d_u, p, n_fourier
-        self.branch = mlp(d_u, width, branch_depth, N_OUT * p)
-        self.trunk = mlp(1 + 2 * n_fourier, width, trunk_depth, N_OUT * p)
-        self.bias = nn.Parameter(torch.zeros(N_OUT))
+        self.branch = mlp(d_u, width, branch_depth, N_OUT * p)  # p coefficients per output channel
+        self.trunk = mlp(1 + 2 * n_fourier, width, trunk_depth, N_OUT * p)  # p basis functions of t per channel
+        self.bias = nn.Parameter(torch.zeros(N_OUT))  # one bias per output channel
 
     def forward(self, u: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         if u.ndim != 2 or u.shape[1] != self.d_u:
@@ -81,6 +82,7 @@ class DeepONet(nn.Module):
         b = self.branch(u).view(B, N_OUT, self.p)                  # (B, 4, p)
         tt = _as_time_batch(t, B)
         k = self.trunk(time_features(tt, self.n_fourier)).view(B, tt.shape[1], N_OUT, self.p)  # (B, n_t, 4, p)
+        # for every sample, time and channel: dot product of branch coefficients and trunk basis over p
         return torch.einsum("bkp,btkp->btk", b, k) + self.bias
 
 
@@ -97,6 +99,7 @@ class MLPBaseline(nn.Module):
             raise ValueError(f"u must have shape (B, {self.d_u}); got {tuple(u.shape)}")
         B = u.shape[0]
         tt = time_features(_as_time_batch(t, B), self.n_fourier)
+        # repeat u for every query time and append t, so each row is one (u, t) pair
         x = torch.cat([u.unsqueeze(1).expand(-1, tt.shape[1], -1), tt], dim=-1)
         return self.net(x)
 

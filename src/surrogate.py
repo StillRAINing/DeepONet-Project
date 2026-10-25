@@ -42,6 +42,7 @@ class Surrogate:
         """Validate and assemble the raw branch input (B, d_u)."""
         if self.input_mode == "samples":
             torque = validate_torque(torque_or_coef, strict=strict)
+            # branch input = [m_p, b, 151 samples of tau1, 151 samples of tau2]
             return np.concatenate([params, torque.reshape(len(torque), -1)], axis=1)
         coef = np.asarray(torque_or_coef, dtype=np.float64)
         if coef.ndim == 3:
@@ -51,6 +52,7 @@ class Surrogate:
         if not np.all(np.isfinite(coef)):
             raise ValueError("coef contains NaN or infinite values")
         validate_torque(np.stack([smooth_torque_samples(c) for c in coef]), strict=strict)  # peak check
+        # zero-pad to the 13 modes the compact models were trained with
         coef = np.pad(coef, [(0, 0), (0, 0), (0, 0), (0, COEF_MODES - coef.shape[3])])
         return np.concatenate([params, coef.reshape(len(coef), -1)], axis=1)
 
@@ -71,11 +73,14 @@ class Surrogate:
         Raises:
             ValueError: wrong shape, NaN/infinite, negative m_p or b, or (strict) out of range.
         """
+        # 1. validate every input before the model is called
         p = validate_params(params, ranges=SMOOTH_RANGES, strict=strict)
         t_s = T_GRID if t is None else validate_time(t, strict=strict)
         raw = self._branch_input(p, torque_or_coef, strict)
         if len(raw) != len(p):
             raise ValueError(f"params has {len(p)} rows but the torque input has {len(raw)}")
+        # 2. z-score the inputs with the training statistics; time goes in as t / T
         u = self.in_norm.encode(torch.as_tensor(raw, dtype=torch.float32))
+        # 3. run the network and undo the output scaling to get rad and rad/s
         out = self.out_norm.decode(self.model(u, torch.as_tensor(t_s / T_FINAL, dtype=torch.float32)))
         return out.numpy().astype(np.float64)
