@@ -1,5 +1,25 @@
 # Instructions for AI assistants (read first)
 
+> **Note for readers of the submitted repository (added 2026-10-25).** This file is the instruction file
+> given to the AI coding assistant (Claude Code) and is kept as part of the AI-use record (`AI_LOG.md`).
+> It was written on 2026-10-12 for the **old sine-torque dataset** (`A sin(2 pi f t + phi)`, `A` up to
+> 15 N m), so the "weak points" below describe the project as it was then, not its final state. What
+> happened to each:
+>
+> | Weak point | Outcome |
+> |---|---|
+> | 1. Function input is 8 numbers | Smooth random-torque family adopted (24 numbers, shown as 2 x 151 samples); honest wording in `docs/DESIGN_LOG.md` D11 |
+> | 2. Unfair MLP baseline | Compact-input MLP and DeepONet added, all four at about 171k parameters, same tuning (EXPERIMENTS E3); the compact MLP wins |
+> | 3. Inflated speed claim | Benchmark against vectorised RK4 and matched-tolerance `solve_ivp`, with break-even counts (EXPERIMENTS B2) |
+> | 4. Mild OOD set | Torque-amplitude and smoothness OOD sets added; reported as degradation (`results/final_eval.md`) |
+> | 5. Sensitivity and channel scaling | Per-channel z-score; per-channel, per-time and per-regime errors (`results/final_analysis.md`) |
+> | 6. q vs qdot consistency | Measured for every model; optional penalty tested (EXPERIMENTS E4) |
+> | 7. Fixed initial condition and horizon | Stated as scope limits in `README.md` |
+> | 8. Leakage hygiene | Train-only statistics; selection rule fixed before test/OOD evaluation (EXPERIMENTS) |
+>
+> Two conventions below are also out of date: the experiments ran on Python 3.10 (CI uses 3.11), and the
+> locked decisions now live in `docs/DESIGN_LOG.md`, not in `README.md`.
+
 This is an **individual university project (MMA3001)**. The student is assessed on their own
 understanding, and **no AI is allowed in the presentation/interview**. They must be able to
 explain every function and every figure unaided. So the goal is not "get the code written"; it

@@ -23,6 +23,9 @@
 > | 6 | order of work | followed |
 >
 > Also stale: the `data.py` gravity comment (fixed); the skipped skeleton tests (all written; suite now 117 pass, 0 skipped).
+>
+> Not in the submitted repository (local working files): `STUDY_GUIDE.md`, `docs/physics/*.pdf` and
+> `docs/DeepONet_Project_Explained.pdf`, mentioned in section 1. Their AI origin is logged in `AI_LOG.md` row 55.
 
 Written while you were away. **Nothing here changes your crucial code** (`dynamics.py`,
 `solvers.py`, `model.py`). It is evidence for you to act on. Numbers were produced by

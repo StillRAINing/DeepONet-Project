@@ -3,6 +3,12 @@
 Grouped by the report section each file supports (section numbers follow the brief's report structure).
 The script that writes each file is in brackets.
 
+## 1. Engineering problem  [`scripts/arm_schematic.py`]
+
+| File | What it shows |
+|---|---|
+| `arm_schematic.png` / `.pdf` | the 2-link arm: angle conventions, torques, friction, payload, gravity, constants |
+
 ## 2. Inputs, outputs and data  [`scripts/data_figures.py`, `scripts/smooth_family_check.py`]
 
 | File | What it shows |

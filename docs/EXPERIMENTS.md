@@ -3,12 +3,25 @@
 One entry per experiment: what was run, why, and what came out. Numbers are on the **validation**
 split (n = 1500) unless a section says otherwise. The test and OOD splits were used once, in "Rule step 3"
 (2026-10-14), after the selection rule was fixed; E4 variants were evaluated on them afterwards as
-labelled post-hoc follow-ups. Status checked 2026-10-22: every experiment is finished; only the
-"Decision: [fill in]" lines (yours) are open.
+labelled post-hoc follow-ups. Status checked 2026-10-22: every experiment is finished. All "Decision" lines filled in
+2026-10-25 (cells tagged AI-drafted are disclosed in AI_LOG row 64).
 
 - Raw numbers for every run: `results/runs.csv` (regenerate with `py -3.10 -m scripts.summarise_runs`).
 - Exact commands: `scripts/run_sweep.sh`. Per-run training logs: `logs/` (not committed).
 - Checkpoints: `checkpoints/` (not committed; reproducible from the seed).
+
+## Contents
+
+Sections are grouped by topic; the date in each heading says when it was run. The selection rule is
+placed first because every later choice follows it, although it was written down during E2/E3 (its timestamp is
+in the heading).
+
+- **Setup**: [Fixed protocol](#fixed-protocol-applies-to-every-run-unless-stated); [Metric columns](#metric-columns); [Selection rule, fixed before any E2/E3 result was seen](#selection-rule-fixed-before-any-e2e3-result-was-seen-2026-10-13-1530)
+- **Accuracy experiments (validation unless stated)**: [E0. Naive reference errors](#e0-naive-reference-errors-2026-10-13-ai-run-py--310--m-scriptsnaive_baselines); [E1. Learning rate, reference DeepONet](#e1-learning-rate-reference-deeponet-2026-10-13); [E2. Cosine learning-rate schedule](#e2-cosine-learning-rate-schedule-queued-2026-10-13); [Reproducibility note](#reproducibility-note-found-2026-10-13-1530); [E3. Fair baselines](#e3-fair-baselines-queued-2026-10-13)
+- **Final selection and evaluation**: [Rule step 2. Seeds](#rule-step-2-seeds-2026-10-13-2320-to-2026-10-14-0100-ai-run); [Rule step 3. Final evaluation on test and OOD](#rule-step-3-final-evaluation-on-test-and-ood-2026-10-14-0110-ai-run-once); [E4. Fair-fight improvements](#e4-fair-fight-improvements-code-added-2026-10-13-ai-written-run-2026-10-14-to-15-results-below); [E5. Final analysis of the selected models](#e5-final-analysis-of-the-selected-models-2026-10-15-ai-run-py--310--m-scriptsfinal_analysis)
+- **Speed**: [B0. Speed vs accuracy, first look](#b0-speed-vs-accuracy-first-look-2026-10-13-1537-ai-run-preliminary-superseded-by-b1); [B1. Speed benchmark](#b1-speed-benchmark-2026-10-15-2128-ai-run-py--310--m-scriptsrun_benchmark-superseded-by-b2-kept-for-the-record); [B2. Speed benchmark, quiet rerun](#b2-speed-benchmark-quiet-rerun-2026-10-21-1629-to-1631-ai-run-py--310--m-scriptsrun_benchmark)
+- **Verification**: [V1. Verification of the ground truth and the tests](#v1-verification-of-the-ground-truth-and-the-tests-2026-10-15-ai-run); [Truth check. Label accuracy on every split](#truth-check-label-accuracy-on-every-split-2026-10-13-1541-ai-run-py--310--m-scriptstruth_check); [W5 check. Initial-condition error at t = 0](#w5-check-initial-condition-error-at-t--0-2026-10-13-1540-ai-run-val-throwaway-snippet)
+- **Status**: [Status and what was not run](#status-and-what-was-not-run)
 
 ## Fixed protocol (applies to every run unless stated)
 
@@ -29,6 +42,19 @@ labelled post-hoc follow-ups. Status checked 2026-10-22: every experiment is fin
 of the same per-sample error. `under_5pct` is the fraction of trajectories below 5 % error. `q2` is
 the median own-scale relative L2 of the q2 channel alone. `consistency` is the median of
 rms(dq/dt - qdot) / rms(true qdot), the physical-consistency check.
+
+## Selection rule, fixed before any E2/E3 result was seen (2026-10-13, ~15:30)
+
+Decided by the student ("fixed for now"), written down before the sweep results existed, so that
+the test and OOD numbers cannot influence any choice:
+
+1. For each of the four models, the final setting is the (lr, schedule) pair with the lowest
+   **validation loss** (`val_loss`, seed 3001) over the grid in `scripts/run_sweep.sh`.
+2. That setting is re-trained with seeds 1 and 2. (`bash scripts/run_seeds.sh <model> <input> <lr> <schedule>`) Each model is reported as mean ± std over the
+   three seeds (3001, 1, 2).
+3. Only then are those 12 checkpoints evaluated, once, on the test split and on every OOD set
+   (`ood`, `ood_amp1`, `ood_amp2`, `ood_smooth`). No setting is changed after that evaluation; if
+   one is changed later, the report must say so and treat the test numbers as no longer clean.
 
 ## E0. Naive reference errors (2026-10-13, AI-run, `py -3.10 -m scripts.naive_baselines`)
 
@@ -66,7 +92,7 @@ Observations (single seed):
 Prediction made before the results: "the smaller rate will win, maybe with more epochs; the
 fraction under 5 % will rise". Outcome: 1e-3 won at 200 epochs; 3e-4 was undertrained.
 
-Decision: [fill in]
+Decision: lr 1e-3 for this model; the lr is chosen per model from the sweeps. I also tried a few other learning rates that I did not document, so only the three runs above are reported.
 
 ## E2. Cosine learning-rate schedule (queued 2026-10-13)
 
@@ -87,11 +113,11 @@ Observations (not conclusions):
   yet a demonstrated improvement.
 - The gain is concentrated on the easy samples and on q2: the fraction under 5 % almost doubles and
   the q2 median falls from 0.35 to 0.21, while p95 gets slightly worse (0.645 to 0.679). In
-  `results/evalfig_val_E1_E2_deeponet_cdf.png` the two CDFs separate below 10 % error and merge above 30 %.
-- In `results/evalfig_val_E1_E2_deeponet_regime.png` all four runs have nearly the same median error
+  `results/evalfig_val_E1_E2_deeponet_cdf.png` (local working figure, not committed) the two CDFs separate below 10 % error and merge above 30 %.
+- In `results/evalfig_val_E1_E2_deeponet_regime.png` (local working figure, not committed) all four runs have nearly the same median error
   on trajectories with peak |q| > 2 pi (about 0.45 to 0.55): no lr or schedule fixes the spinning regime.
 
-Decision: [fill in]
+Decision: use the cosine schedule, because it gives less jitter at the end of training.
 
 ## Reproducibility note (found 2026-10-13, ~15:30)
 
@@ -216,20 +242,7 @@ the worst (0.241 vs 0.110 to 0.27 for the DeepONets), so 'more accurate' and 'mo
 CLAUDE.md weak point 2 anticipated this; if it holds over the grid and the seeds, it is a legitimate
 headline result. Wait for the full grid and the seeds before reading anything into it.
 
-Decision: [fill in]
-
-## Selection rule, fixed before any E2/E3 result was seen (2026-10-13, ~15:30)
-
-Decided by the student ("fixed for now"), written down before the sweep results existed, so that
-the test and OOD numbers cannot influence any choice:
-
-1. For each of the four models, the final setting is the (lr, schedule) pair with the lowest
-   **validation loss** (`val_loss`, seed 3001) over the grid in `scripts/run_sweep.sh`.
-2. That setting is re-trained with seeds 1 and 2. (`bash scripts/run_seeds.sh <model> <input> <lr> <schedule>`) Each model is reported as mean ± std over the
-   three seeds (3001, 1, 2).
-3. Only then are those 12 checkpoints evaluated, once, on the test split and on every OOD set
-   (`ood`, `ood_amp1`, `ood_amp2`, `ood_smooth`). No setting is changed after that evaluation; if
-   one is changed later, the report must say so and treat the test numbers as no longer clean.
+Decision: frame the report around speed and consistency as the advantages of the DeepONet.
 
 ## Rule step 2. Seeds (2026-10-13 23:20 to 2026-10-14 01:00, AI-run)
 
@@ -315,7 +328,7 @@ Caveats: one data split; 3 seeds; ~171k parameters only (no size sweep); 200 epo
 test come from the same distribution; `ood_*` sets have 200 samples each, so their percentages move in
 steps of 0.5 %. Timings are not part of this evaluation (see B2, the final benchmark).
 
-Decision (student): [fill in: which model is the headline, and how the report frames points 2, 4 and 7]
+Decision (student): Point 2: the MLP wins on accuracy. This was an unexpected result; with similar parameter counts, the MLP has interactive access to both the torque and the time input (which the DeepONet splits into branch and trunk), so it may have more latent features to work with (my hypothesis, not tested). Point 4: the DeepONet wins on consistency; this is expected, as the literature suggests, and it is what we were going for. Point 7: on `ood_smooth` (a rougher torque, with Fourier modes 7 to 13 never seen in training), both sample-input models generalise better than the coefficient models, whose inputs for those modes were zero-padded. Feeding the torque as a function pays off when the torque family changes; that is the operator-learning part of the result. The DeepONet with samples is lowest (0.155 +- 0.009 vs 0.167 +- 0.013 for the MLP with samples), but the gap is about one std, so the report does not claim a DeepONet win. [AI-drafted 2026-10-25 at my request, AI_LOG row 64]
 
 ## E4. Fair-fight improvements (code added 2026-10-13, AI-written; run 2026-10-14 to 15, results below)
 
@@ -331,8 +344,7 @@ available to both families (same flag, same budget, same selection on validation
 | Off-grid query times | `scripts/offgrid_eval.py <ckpts>` | interpolation in t. Both models take t continuously, so this is NOT a DeepONet-specific test |
 | Variants for both families | `scripts/run_improve.sh <lr> <sched>` | ff6, cons 0.1, both; each differs from the base by one thing |
 
-Prediction before running (student to fill in): [fill in] (AI_LOG row 29 correction records it: "Fourier
-features will improve the trunk and might let the DeepONet beat the MLP".)
+Prediction before running (mine, made before the runs): Fourier features will improve the trunk and might let the DeepONet beat the MLP.
 
 ### E4 results (AI-written 2026-10-15 from `runs_agg.csv`, `final_eval_ff6*.csv`; tables in `results/final_analysis.md`)
 
@@ -373,9 +385,64 @@ Observations:
    p = 16 to 128 is a plateau within about 2 seed std; at equal budget p = 256 (width 71) is worse. p = 32
    is marginally lowest (0.199 vs 0.206 at p = 64, one seed). p = 64 is a defensible choice (W2).
 
-Decision: [fill in: (a) does the headline stay the rule-selected four (recommended: yes; report E4 as
-follow-up), (b) whether to quote the ff6 + cons MLP as "best configuration found" with the caveat that test was
-seen for it]
+Decision: (a) yes, the headline stays with the rule-selected four and E4 is reported as follow-up. (b) yes: the ff6 + cons MLP (test median 0.066 +- 0.002) is quoted in the report, labelled "best found, post hoc", because the variant was designed after the rule-selected test results were seen, so its test score is not clean.
+
+## E5. Final analysis of the selected models (2026-10-15, AI-run, `py -3.10 -m scripts.final_analysis`)
+
+After the selection rule; nothing chosen here. Tables: `results/final_analysis.md`. Figures:
+`results/final_overview.png`, `final_consistency.png` (#14), `final_ood_degradation.png` (#15),
+`final_seeds.png` (#18), `final_sensitivity.png`, `evalfig_{test,ood_amp1,ood_smooth}_final4_*.png`
+(#10 to #13, #17 on test and two OOD sets).
+
+Findings (seed 3001 per-sample, unless "3 seeds"):
+1. **Where the error lives.** By regime (peak |q|): < pi (67 % of test) median 0.045 to 0.089; pi to 2 pi
+   0.12 to 0.18; > 2 pi 0.37 to 0.54 for every model. By time: the median error grows about 4x from
+   t = 1 s to t = 3 s; the p90 grows 6 to 9x. By channel (3 seeds): q1 0.03, q2 0.16 to 0.21, q1dot 0.08 to
+   0.15, q2dot 0.19 to 0.35: the elbow and the velocities are the hard part.
+2. **Naive yardsticks on test**: mean training trajectory median 0.43 (p95 0.87); 1-NN 0.42 (p95 1.01).
+   Every model beats them 3 to 6x at the median, but only by ~25 % at p95.
+3. **The tail is a property of the map, not only of the networks.** Perturbing every input by ~1 % moves the
+   true trajectory by 0.6 % (median) for calm samples but 4 to 8 % (p90 32 to 56 %) for spinning ones;
+   Spearman correlation between that sensitivity and the MLP's error is +0.81
+   (`results/final_sensitivity.png`). Correlation, not proof.
+4. **Out of range.** Amplitude: error grows ~20x across the training range itself, roughly doubles across
+   the 6 N m edge, then saturates at 0.6 to 0.8 (no cliff). m_p, b: once matched on trajectory size, OOD
+   errors equal in-range ones within +-25 % (a mild shift). Rougher torque: samples input beats coef input
+   for both families (3 seeds, beyond seed noise), the one place where function-as-samples input pays off.
+5. **Physics.** Consistency (rms(dq/dt - qdot) / rms(qdot)): DeepONet 0.10 to 0.15, MLP 0.23 to 0.26; with the
+   E4 penalty 0.009 and 0.12. Energy-balance excess follows accuracy (MLP 0.15 to 0.17, DeepONet 0.21 to 0.25
+   of the energy swing), and its p95 exceeds 1 for every model: on hard trajectories the predictions do not
+   obey the energy balance at all.
+6. **Initial condition (W5).** Median |x_pred(0)| is 0.3 to 1.3 % of the channel rms for positions and 1.3 to
+   6.3 % for velocities; worst for the MLP with samples input. Not enforced by any model.
+7. **Seeds** (`final_seeds.png`): the seed std of the test median is 0.000 to 0.007, far below the
+   MLP-vs-DeepONet gap (0.03 to 0.06); p95 spread 0.004 to 0.018.
+
+## B0. Speed vs accuracy, first look (2026-10-13 15:37, AI-run, PRELIMINARY; superseded by B1)
+
+`python -m src.benchmark --checkpoint <ckpt>` (added today; smooth family, **val** split, the
+surrogate time includes building, normalising and decoding the input/output). Run on 8 to 16 val
+trajectories **while the training sweep was using the CPU**, so the times below are only rough
+orders of magnitude. Rerun on an idle machine before quoting anything. The error column is valid (it
+does not depend on load): median headline relative L2 against the stored RK4 truth.
+
+| Method (E1 DeepONet, lr 1e-3) | ms / trajectory (contended) | median rel. L2 |
+|---|---|---|
+| DeepONet, batch of 16 | ~0.4 | 0.087 (these 16 samples) |
+| DeepONet, single query | ~2 | same |
+| vectorised RK4, 8 substeps (= the truth) | ~38 | 0 |
+| `solve_ivp` RK45, rtol 1e-1 | not timed | 0.58 |
+| `solve_ivp` RK45, rtol 1e-2 | ~18 | 0.014 |
+| `solve_ivp` RK45, rtol 1e-3 | ~24 | 0.0013 |
+| `solve_ivp` RK45, rtol 1e-6 | ~80 | 3e-7 |
+
+Observations, not conclusions:
+- `solve_ivp` at rtol 1e-2 is already ~6x **more accurate** than the surrogate, and at rtol 1e-1 it is
+  far worse. The matched-accuracy solver lies between the two (rtol 3e-2 is now in the default grid).
+  The fair speed-up is against that one, not against rtol 1e-6 or the 8-substep truth.
+- Break-even (weak point 3): at a gain of ~15 to 20 ms per query, the ~560 s training run alone needs
+  roughly 30,000 queries to pay off, before counting data generation (10,000 RK4 trajectories) or
+  the lr / model sweep. Use `break_even_queries` with idle-machine numbers.
 
 ## B1. Speed benchmark (2026-10-15 21:28, AI-run, `py -3.10 -m scripts.run_benchmark`; superseded by B2, kept for the record)
 
@@ -440,37 +507,6 @@ Observations:
 Caveat that still applies: one laptop, one run; repeated runs on this machine differ by ~10 to 20 %. B1 vs B2
 differ by ~2x, which is the background load, not noise.
 
-## E5. Final analysis of the selected models (2026-10-15, AI-run, `py -3.10 -m scripts.final_analysis`)
-
-After the selection rule; nothing chosen here. Tables: `results/final_analysis.md`. Figures:
-`results/final_overview.png`, `final_consistency.png` (#14), `final_ood_degradation.png` (#15),
-`final_seeds.png` (#18), `final_sensitivity.png`, `evalfig_{test,ood_amp1,ood_smooth}_final4_*.png`
-(#10 to #13, #17 on test and two OOD sets).
-
-Findings (seed 3001 per-sample, unless "3 seeds"):
-1. **Where the error lives.** By regime (peak |q|): < pi (67 % of test) median 0.045 to 0.089; pi to 2 pi
-   0.12 to 0.18; > 2 pi 0.37 to 0.54 for every model. By time: the median error grows about 4x from
-   t = 1 s to t = 3 s; the p90 grows 6 to 9x. By channel (3 seeds): q1 0.03, q2 0.16 to 0.21, q1dot 0.08 to
-   0.15, q2dot 0.19 to 0.35: the elbow and the velocities are the hard part.
-2. **Naive yardsticks on test**: mean training trajectory median 0.43 (p95 0.87); 1-NN 0.42 (p95 1.01).
-   Every model beats them 3 to 6x at the median, but only by ~25 % at p95.
-3. **The tail is a property of the map, not only of the networks.** Perturbing every input by ~1 % moves the
-   true trajectory by 0.6 % (median) for calm samples but 4 to 8 % (p90 32 to 56 %) for spinning ones;
-   Spearman correlation between that sensitivity and the MLP's error is +0.81
-   (`results/final_sensitivity.png`). Correlation, not proof.
-4. **Out of range.** Amplitude: error grows ~20x across the training range itself, roughly doubles across
-   the 6 N m edge, then saturates at 0.6 to 0.8 (no cliff). m_p, b: once matched on trajectory size, OOD
-   errors equal in-range ones within +-25 % (a mild shift). Rougher torque: samples input beats coef input
-   for both families (3 seeds, beyond seed noise), the one place where function-as-samples input pays off.
-5. **Physics.** Consistency (rms(dq/dt - qdot) / rms(qdot)): DeepONet 0.10 to 0.15, MLP 0.23 to 0.26; with the
-   E4 penalty 0.009 and 0.12. Energy-balance excess follows accuracy (MLP 0.15 to 0.17, DeepONet 0.21 to 0.25
-   of the energy swing), and its p95 exceeds 1 for every model: on hard trajectories the predictions do not
-   obey the energy balance at all.
-6. **Initial condition (W5).** Median |x_pred(0)| is 0.3 to 1.3 % of the channel rms for positions and 1.3 to
-   6.3 % for velocities; worst for the MLP with samples input. Not enforced by any model.
-7. **Seeds** (`final_seeds.png`): the seed std of the test median is 0.000 to 0.007, far below the
-   MLP-vs-DeepONet gap (0.03 to 0.06); p95 spread 0.004 to 0.018.
-
 ## V1. Verification of the ground truth and the tests (2026-10-15, AI-run)
 
 - `scripts/solver_figures.py` -> `results/solver_checks.md`, FIGURE_PLAN #2 to #4. RK4 order 4.00 to 4.12 on
@@ -487,54 +523,6 @@ Findings (seed 3001 per-sample, unless "3 seeds"):
   order and `solve_ivp` agreement tests. Still missed: the phase range halved in the **sine** family sampler
   (diagnostics only; the smooth family has no phase input).
 
-## Not yet run
-
-Nothing required. The benchmark rerun with desktop programs closed was done on 2026-10-21 (B2). Still
-optional: a seed-1/2 replicate of the data-size and p sweeps (they stay single-seed in the report).
-
-## B0. Speed vs accuracy, first look (2026-10-13 15:37, AI-run, PRELIMINARY; superseded by B1)
-
-`python -m src.benchmark --checkpoint <ckpt>` (added today; smooth family, **val** split, the
-surrogate time includes building, normalising and decoding the input/output). Run on 8 to 16 val
-trajectories **while the training sweep was using the CPU**, so the times below are only rough
-orders of magnitude. Rerun on an idle machine before quoting anything. The error column is valid (it
-does not depend on load): median headline relative L2 against the stored RK4 truth.
-
-| Method (E1 DeepONet, lr 1e-3) | ms / trajectory (contended) | median rel. L2 |
-|---|---|---|
-| DeepONet, batch of 16 | ~0.4 | 0.087 (these 16 samples) |
-| DeepONet, single query | ~2 | same |
-| vectorised RK4, 8 substeps (= the truth) | ~38 | 0 |
-| `solve_ivp` RK45, rtol 1e-1 | not timed | 0.58 |
-| `solve_ivp` RK45, rtol 1e-2 | ~18 | 0.014 |
-| `solve_ivp` RK45, rtol 1e-3 | ~24 | 0.0013 |
-| `solve_ivp` RK45, rtol 1e-6 | ~80 | 3e-7 |
-
-Observations, not conclusions:
-- `solve_ivp` at rtol 1e-2 is already ~6x **more accurate** than the surrogate, and at rtol 1e-1 it is
-  far worse. The matched-accuracy solver lies between the two (rtol 3e-2 is now in the default grid).
-  The fair speed-up is against that one, not against rtol 1e-6 or the 8-substep truth.
-- Break-even (weak point 3): at a gain of ~15 to 20 ms per query, the ~560 s training run alone needs
-  roughly 30,000 queries to pay off, before counting data generation (10,000 RK4 trajectories) or
-  the lr / model sweep. Use `break_even_queries` with idle-machine numbers.
-
-## W5 check. Initial-condition error at t = 0 (2026-10-13 ~15:40, AI-run, val, throwaway snippet)
-
-Every true trajectory starts at x0 = 0, and nothing in the model or the loss forces the prediction to.
-|prediction at t = 0| in raw units, per channel [q1, q2, q1dot, q2dot] (rad, rad, rad/s, rad/s):
-
-| Run | median | p95 | median as a fraction of the channel rms |
-|---|---|---|---|
-| DeepONet samples, lr 1e-3 | 0.019, 0.069, 0.112, 0.293 | 0.089, 0.278, 0.512, 1.498 | 1.0 %, 2.1 %, 3.4 %, 5.7 % |
-| DeepONet samples, lr 1e-3, cosine | 0.015, 0.037, 0.097, 0.237 | 0.059, 0.131, 0.544, 1.056 | 0.8 %, 1.1 %, 3.0 %, 4.6 % |
-| DeepONet coef, lr 1e-3 | 0.015, 0.050, 0.094, 0.185 | 0.062, 0.205, 0.280, 0.710 | 0.8 %, 1.5 %, 2.9 %, 3.6 % |
-
-(channel rms over val: 1.94, 3.31, 3.26, 5.14.) The start is wrong by a few percent of the
-channel size, worst on q2dot. It is visible in `results/evalfig_val_E1_E2_deeponet_cases.png` (the
-q2dot predictions do not start at 0). Whether to fix it architecturally (O5) is your decision. If you
-look into it, ask: what simple change to the output makes x(0) = x0 hold exactly for every input,
-and what does it do to the `qdot = dq/dt` consistency near t = 0?
-
 ## Truth check. Label accuracy on every split (2026-10-13 ~15:41, AI-run, `py -3.10 -m scripts.truth_check`)
 
 Stored RK4 (8 substeps) vs DOP853 at rtol 1e-10, 20 random samples per split (seed 3001), headline
@@ -548,3 +536,25 @@ metric. No model involved, so this does not touch model selection. Extends DESIG
 Reading: the label floor is 2 to 8 orders of magnitude below the surrogate errors (~0.1), on every
 split including the spinning amplitude shells. Label error cannot explain any surrogate error here.
 Only 20 samples per split: the max is not the true worst case.
+
+## W5 check. Initial-condition error at t = 0 (2026-10-13 ~15:40, AI-run, val, throwaway snippet)
+
+Every true trajectory starts at x0 = 0, and nothing in the model or the loss forces the prediction to.
+|prediction at t = 0| in raw units, per channel [q1, q2, q1dot, q2dot] (rad, rad, rad/s, rad/s):
+
+| Run | median | p95 | median as a fraction of the channel rms |
+|---|---|---|---|
+| DeepONet samples, lr 1e-3 | 0.019, 0.069, 0.112, 0.293 | 0.089, 0.278, 0.512, 1.498 | 1.0 %, 2.1 %, 3.4 %, 5.7 % |
+| DeepONet samples, lr 1e-3, cosine | 0.015, 0.037, 0.097, 0.237 | 0.059, 0.131, 0.544, 1.056 | 0.8 %, 1.1 %, 3.0 %, 4.6 % |
+| DeepONet coef, lr 1e-3 | 0.015, 0.050, 0.094, 0.185 | 0.062, 0.205, 0.280, 0.710 | 0.8 %, 1.5 %, 2.9 %, 3.6 % |
+
+(channel rms over val: 1.94, 3.31, 3.26, 5.14.) The start is wrong by a few percent of the
+channel size, worst on q2dot. It is visible in `results/evalfig_val_E1_E2_deeponet_cases.png` (local working figure, not committed) (the
+q2dot predictions do not start at 0). Whether to fix it architecturally (O5) is your decision. If you
+look into it, ask: what simple change to the output makes x(0) = x0 hold exactly for every input,
+and what does it do to the `qdot = dq/dt` consistency near t = 0?
+
+## Status and what was not run
+
+Nothing required. The benchmark rerun with desktop programs closed was done on 2026-10-21 (B2). Still
+optional: a seed-1/2 replicate of the data-size and p sweeps (they stay single-seed in the report).
