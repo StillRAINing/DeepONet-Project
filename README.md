@@ -130,6 +130,7 @@ docs/        design log (DESIGN_LOG.md), experiment log and selection rule (EXPE
              code audit (REVIEW_NOTES.md)
 docs/html/   generated API documentation (pdoc), open docs/html/index.html
 results/     figures, tables (final_eval.md, benchmark.md, runs.csv), test_report.xml; index in results/INDEX.md
+results/report/  the figures used in the report, redrawn at print size (scripts/report_figures.py)
 report/      report draft
 data/        generated datasets (not committed; regenerate with the recorded seed)
 checkpoints/ trained models (not committed)
@@ -173,6 +174,7 @@ python -m scripts.final_eval --ff6 / --ff6cons   # the E4 follow-up variants on 
 python -m scripts.run_benchmark             # speed / memory / FLOPs / break-even -> results/benchmark.md (idle machine!)
 python -m scripts.final_analysis            # every remaining report figure and table -> results/final_analysis.md
 python -m scripts.solver_figures            # RK4 convergence, energy, labels vs DOP853 -> results/solver_checks.md
+python -m scripts.report_figures            # report Figures 2 to 8 at print size (6.5 in, 8 pt) -> results/report/
 python -m scripts.mutation_check            # do the tests catch deliberate bugs? -> results/mutation_check.md
 python -m scripts.plot_training             # loss curves -> results/training_curves/ (loss_by_model.png, loss_all_runs.png)
 python -m scripts.plot_eval checkpoints/<a>.pt [<b>.pt ...]   # evaluation figures on val

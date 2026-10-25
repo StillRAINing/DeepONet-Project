@@ -61,6 +61,11 @@ The script that writes each file is in brackets.
 | `benchmark.md` / `.csv` / `.json` | speed, FLOPs, memory, break-even (EXPERIMENTS B2) [`scripts/run_benchmark.py`] |
 | `bench_pareto.png`, `bench_batch.png`, `bench_breakeven.png` | the speed figures [`scripts/final_analysis.py`] |
 
+## Report figures  [`scripts/report_figures.py`]
+
+`report/fig2_convergence.png` ... `report/fig8_breakeven.png`: Figures 2 to 8 of the report (Figure 8 is Appendix
+Figure C7), redrawn at the printed size (6.5 in wide, 8 pt text) from the saved results above. No model is loaded.
+
 ## Training curves  [`scripts/plot_training.py`]
 
 `training_curves/`: `loss_by_model.png` (the one to use in the
